@@ -1,5 +1,5 @@
+import os, warnings
 import numpy as np
-import warnings
 import matplotlib.pyplot as plt
 
 # degas high contrast color scheme
@@ -14,6 +14,11 @@ blue, red, turquoise, purple, magenta, orange, gray  = [[0.372549, 0.596078, 1],
 
 # degas line plot colors
 royal_purple = np.array((120,81,169))/255.
+
+style_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "styles")
+def set_style(style_name="default"):
+    plt.style.use(os.path.join(style_path, style_name + ".mplstyle"))
+
 
 def fixed_aspect_ratio(ratio, ax=None, log=False):
     '''
@@ -173,6 +178,21 @@ def plot_err(y, errs,
 
     return ax
 
+def plot_segments(coords, mask, ax=None, **kwargs):
+    """
+    Given a set of coordinates, and a boolean mask, find consecutive 
+    runs of coordinates and plot them as connected lines
+    """
+    if not ax:
+        fig = plt.figure()
+        ax = fig.gca()
+    (runlengths, startpositions, values) = rle(mask)
+    runlengths, startpositions = runlengths[values], startpositions[values]
+    for start, run in zip(startpositions, runlengths):
+        ax.plot(*coords[start:start+run].T, **kwargs)
+
+    return ax
+
 #############################################################
 #
 #
@@ -254,7 +274,7 @@ def cmap1D(col1, col2, N):
 #
 ############################################################
 
-def better_savefig(name, dpi=72, pad=0.0, remove_border=True):
+def better_savefig(name, dpi=300, pad=0.0, pad_inches=0, remove_border=False):
     '''
     This function is for saving images without a bounding box and at the proper resolution
         The tiff files produced are huge because compression is not supported py matplotlib
@@ -282,4 +302,5 @@ def better_savefig(name, dpi=72, pad=0.0, remove_border=True):
         plt.gca().xaxis.set_major_locator(plt.NullLocator())
         plt.gca().yaxis.set_major_locator(plt.NullLocator())
 
-    plt.savefig(name, bbox_inches='tight', pad_inches=0, dpi=dpi)
+    plt.savefig(name, bbox_inches='tight', pad_inches=pad_inches, dpi=dpi)
+
