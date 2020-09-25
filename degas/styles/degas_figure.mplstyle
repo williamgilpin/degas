@@ -1,3 +1,5 @@
+# Template here: https://github.com/matplotlib/matplotlib/blob/v3.1.3/matplotlibrc.template
+
 # lines.linewidth: 2
 # lines.color: FF00FF
 lines.antialiased: True
@@ -8,31 +10,34 @@ lines.antialiased: True
 # patch.edgecolor: AEAEFF
 # patch.antialiased: True
 
+font.family: Open Sans
 # font.family: Arial
-# font.size: 10.0
+font.size: 10.0
 
 # axes.facecolor: 202020
 axes.edgecolor: 939598
 # axes.linewidth: 1.0
-# axes.grid: True
+axes.grid: False
 # axes.titlesize: x-large
 # axes.titleweight: bold
 # axes.labelsize: large
 # axes.labelcolor: FAFAFA
 # axes.axisbelow: True
 axes.prop_cycle: cycler("color", [[0.372549, 0.596078, 1], [1.0, .3882, .2784], [0.20784314, 0.67843137, 0.6], [0.59607843, 0.25882353, 0.89019608],[0.803922, 0.0627451, 0.462745], [0.917647, 0.682353, 0.105882],[0.7, 0.7, 0.7]])
+axes.xmargin : .01
+axes.ymargin: .01
 
 # grid.color: FFFFFF
 # grid.linestyle: dotted
 
-# xtick.major.size: 0.0
-# xtick.minor.size: 0.0
+xtick.major.size: 7.0
+xtick.minor.size: 3.0
 # xtick.major.pad: 6.0
 # xtick.minor.pad: 6.0
 xtick.color: 939598
 xtick.direction: in
-# ytick.major.size: 0.0
-# ytick.minor.size: 0.0
+ytick.major.size: 7.0
+ytick.minor.size: 3.0
 # ytick.major.pad: 6.0
 # ytick.minor.pad: 6.0
 ytick.color: 939598
@@ -47,7 +52,7 @@ ytick.direction: in
 # text.color: white
 # text.usetex: True
 
-figure.figsize : 2,2
+figure.figsize : 2, 2
 # figure.facecolor: 587070
 # figure.edgecolor: 0.5
 # figure.subplot.hspace: 0.5
@@ -55,5 +60,7 @@ figure.figsize : 2,2
 # savefig.facecolor: 587070
 # savefig.edgecolor: 101010
 
-image.interpolation: "nearest"
-image.cmap: "gray"
+image.interpolation: nearest
+image.cmap: gray
+image.origin : lower             ## lower | upper
+

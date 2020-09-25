@@ -274,7 +274,7 @@ def cmap1D(col1, col2, N):
 #
 ############################################################
 
-def better_savefig(name, dpi=300, pad=0.0, pad_inches=0, remove_border=False):
+def better_savefig(name, dpi=300, pad=0.0, pad_inches=0.02, remove_border=False):
     '''
     This function is for saving images without a bounding box and at the proper resolution
         The tiff files produced are huge because compression is not supported py matplotlib
