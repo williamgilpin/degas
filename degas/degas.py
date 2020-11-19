@@ -1,6 +1,11 @@
 import os, warnings
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.interpolate import griddata
+
+
+## TODO
+## Easy split y axis function
 
 # degas high contrast color scheme
 blue, red, turquoise, purple, magenta, orange, gray  = [[0.372549, 0.596078, 1], 
@@ -12,28 +17,48 @@ blue, red, turquoise, purple, magenta, orange, gray  = [[0.372549, 0.596078, 1],
                                                   [0.7, 0.7, 0.7]
                                                   ]
 
+
+pastel_rainbow = np.array([
+    [221, 59,  53],
+    [211, 132, 71],
+    [237, 157, 63],
+    [165, 180, 133],
+    [63,  148, 109], 
+    [50,  122, 137], 
+    [44,  115, 178], 
+    [43,  52,  124]
+    ])/255.
+
 # degas line plot colors
-royal_purple = np.array((120,81,169))/255.
+royal_purple = np.array((120, 81, 169))/255.
 
 style_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "styles")
 def set_style(style_name="default"):
     plt.style.use(os.path.join(style_path, style_name + ".mplstyle"))
 
 
-def fixed_aspect_ratio(ratio, ax=None, log=False):
+def fixed_aspect_ratio(ratio, ax=None, 
+	log=False, semilogy=False, semilogx=False):
     '''
     Set a fixed aspect ratio on matplotlib plots 
     regardless of axis units
     '''
     if not ax:
         ax = plt.gca()
-    xvals,yvals = ax.axes.get_xlim(), ax.axes.get_ylim()
+    xvals, yvals = ax.axes.get_xlim(), ax.axes.get_ylim()
     xrange = xvals[1] - xvals[0]
     yrange = yvals[1] - yvals[0]
     if log:
-        xrange = np.log(xvals[1]) - np.log(xvals[0])
-        yrange = np.log(yvals[1]) - np.log(yvals[0])
-    ax.set_aspect(ratio*(xrange/yrange), adjustable='box')
+        xrange = np.log10(xvals[1]) - np.log10(xvals[0])
+        yrange = np.log10(yvals[1]) - np.log10(yvals[0])
+    if semilogy:
+        yrange = np.log10(yvals[1]) - np.log10(yvals[0])
+    if semilogx:
+        xrange = np.log10(xvals[1]) - np.log10(xvals[0])
+    try:
+        ax.set_aspect(ratio*(xrange/yrange), adjustable='box')
+    except NotImplementedError:
+        warnings.warn("Aspect ratio not set for 3D plot.")
 
 #############################################################
 #
@@ -265,6 +290,49 @@ def cmap1D(col1, col2, N):
         vr.append(np.linspace(col1[ii],col2[ii],N))
     colist = np.array(vr).T
     return [tuple(thing) for thing in colist]
+
+def coords_to_image(x, y, z, **kwargs):
+    """Given a list of x, y, z values, interpolate onto 
+    a regular grid for plotting as an image
+    
+    Parameters
+    ----------
+    x, y, z : N x 1
+        Lists of data coordinates
+    
+    kwargs : int
+        Parameters passed to scipy.interpolate.griddata,
+        such as the interpolation order and filling rules
+        
+    Returns
+    -------
+    pp_im : D1 x D2 ndarray
+        An image created from the 2D coordinates
+    
+    Notes
+    -----
+    
+    Based on Mathematica's ListDensityPlot
+    """
+    x_sorted = np.sort(x)
+    y_sorted = np.sort(y)
+    xs, ys = (
+        np.median(np.diff(x_sorted)[np.diff(x_sorted)>0]), 
+        np.median(np.diff(y_sorted)[np.diff(y_sorted)>0])
+    )
+    xlo, xhi = np.min(x), np.max(x)
+    ylo, yhi = np.min(y), np.max(y)
+    
+    nx, ny = int(1 + np.ceil((xhi - xlo)/xs)), int(1 + np.ceil((yhi - ylo)/ys))
+    xp, yp = np.linspace(xlo, xhi, nx), np.linspace(ylo, yhi, ny)
+    
+    xx, yy = np.meshgrid(xp, yp)
+    
+    grid_vals = np.vstack([np.ravel(item) for item in [xx, yy]]).T
+    grid_vals = np.vstack([np.ravel(item) for item in [xx, yy]]).T
+    pp = griddata(np.vstack([x, y]).T, z, grid_vals, "nearest")
+    pp_im = np.reshape(pp, (ny, nx))
+    return pp_im
 
 #############################################################
 #

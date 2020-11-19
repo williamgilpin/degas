@@ -15,7 +15,7 @@ font.family: Open Sans
 font.size: 10.0
 
 # axes.facecolor: 202020
-axes.edgecolor: 808080#939598
+axes.edgecolor: 939598
 # axes.linewidth: 1.0
 axes.grid: False
 # axes.titlesize: x-large
@@ -34,13 +34,13 @@ xtick.major.size: 7.0
 xtick.minor.size: 3.0
 # xtick.major.pad: 6.0
 # xtick.minor.pad: 6.0
-xtick.color: 808080#939598 # [0.6, 0.6. 0.6]
+xtick.color: 939598
 xtick.direction: in
 ytick.major.size: 7.0
 ytick.minor.size: 3.0
 # ytick.major.pad: 6.0
 # ytick.minor.pad: 6.0
-ytick.color: 808080#939598
+ytick.color: 939598
 ytick.direction: in
 
 # legend.fancybox: True
