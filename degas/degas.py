@@ -58,7 +58,9 @@ def fixed_aspect_ratio(ratio, ax=None,
     try:
         ax.set_aspect(ratio*(xrange/yrange), adjustable='box')
     except NotImplementedError:
-        warnings.warn("Aspect ratio not set for 3D plot.")
+        warnings.warn("Setting aspect ratio is experimental for 3D plots.")
+        plt.gca().set_box_aspect((1, 1, ratio*(xrange/yrange)))
+        #ax.set_box_aspect((ratio*(xrange/yrange), 1, 1))
 
 #############################################################
 #
@@ -147,8 +149,6 @@ def plot3dproj(x, y, z, *args,
     else:
         sdist_x, sdist_y, sdist_z = shadow_dist
 
-
-    
     ax.plot(x, z, *args, zdir='y', zs=sdist_y*np.max(y), color=color_proj, **kwargs)
     ax.plot(y, z, *args, zdir='x', zs=sdist_x*np.min(x), color=color_proj, **kwargs)
     ax.plot(x, y, *args, zdir='z', zs=sdist_z*np.min(z), color=color_proj, **kwargs)
@@ -217,6 +217,13 @@ def plot_segments(coords, mask, ax=None, **kwargs):
         ax.plot(*coords[start:start+run].T, **kwargs)
 
     return ax
+
+def split_log(data, base=10):
+	"""
+	Map a dataset to split log coordinates, in order to better show
+	dynamic range
+	"""
+	return np.sign(data) * np.log10(1 + np.abs(data))
 
 #############################################################
 #
@@ -342,7 +349,7 @@ def coords_to_image(x, y, z, **kwargs):
 #
 ############################################################
 
-def better_savefig(name, dpi=300, pad=0.0, pad_inches=0.02, remove_border=False):
+def better_savefig(name, dpi=300, pad=0.0, pad_inches=0.02, remove_border=False, **kwargs):
     '''
     This function is for saving images without a bounding box and at the proper resolution
         The tiff files produced are huge because compression is not supported py matplotlib
@@ -360,13 +367,15 @@ def better_savefig(name, dpi=300, pad=0.0, pad_inches=0.02, remove_border=False)
         
     remove_border : bool
         Whether to remove axes and padding (for example, for images)
+
+    kwargs : passed on to matplotlib's built-in "savefig" function
     
     '''
     if remove_border:
         plt.gca().set_axis_off()
         plt.subplots_adjust(top = 1+pad, bottom = 0+pad, right = 1+pad, left = 0+pad, 
                     hspace = 0, wspace = 0)
-        plt.margins(0,0)
+        plt.margins(0+pad,0+pad)
         plt.gca().xaxis.set_major_locator(plt.NullLocator())
         plt.gca().yaxis.set_major_locator(plt.NullLocator())
 
