@@ -20,13 +20,20 @@ blue, red, turquoise, purple, magenta, orange, gray  = [[0.372549, 0.596078, 1],
 
 pastel_rainbow = np.array([
     [221, 59,  53],
-    [211, 132, 71],
+    #[211, 132, 71],
     [237, 157, 63],
     [165, 180, 133],
     [63,  148, 109], 
     [50,  122, 137], 
     [44,  115, 178], 
-    [43,  52,  124]
+    [43,  52,  124],
+    [164, 36, 124],
+    [186, 173, 214],
+    # [191, 163, 215],
+    # [139,  211, 126],
+    [163, 218, 133],
+    [136, 159, 122],
+    [168, 192, 221]
     ])/255.
 
 # degas line plot colors
@@ -136,10 +143,10 @@ def plot3dproj(x, y, z, *args,
         The integer aspect ratio to impose on the axes. If not passed, the default
         aspect ratio is used
     """
-    if not ax:
+    if ax is None:
         fig = plt.figure(figsize=(7,7))
         ax = fig.add_subplot(111, projection= '3d')
-    if not color_proj:
+    if color_proj is None:
         color_proj = lighter(color, .6)
 
     if np.isscalar(shadow_dist) == 1:
@@ -349,10 +356,20 @@ def coords_to_image(x, y, z, **kwargs):
 #
 ############################################################
 
+
+def vanish_axes(gca=None):
+    """Make all axes disappear from a plot"""
+    if not gca:
+        gca = plt.gca()
+    gca.set_axis_off()
+    gca.xaxis.set_major_locator(plt.NullLocator())
+    gca.yaxis.set_major_locator(plt.NullLocator())
+
+
 def better_savefig(name, dpi=300, pad=0.0, pad_inches=0.02, remove_border=False, **kwargs):
-    '''
-    This function is for saving images without a bounding box and at the proper resolution
-        The tiff files produced are huge because compression is not supported py matplotlib
+    """This function is for saving images without a bounding box and at the proper resolution
+        The tiff files produced are huge because compression is not currently supported by 
+        matplotlib
     
     Parameters
     ----------
@@ -370,7 +387,7 @@ def better_savefig(name, dpi=300, pad=0.0, pad_inches=0.02, remove_border=False,
 
     kwargs : passed on to matplotlib's built-in "savefig" function
     
-    '''
+    """
     if remove_border:
         plt.gca().set_axis_off()
         plt.subplots_adjust(top = 1+pad, bottom = 0+pad, right = 1+pad, left = 0+pad, 
