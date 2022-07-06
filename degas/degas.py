@@ -232,6 +232,56 @@ def split_log(data, base=10):
 	"""
 	return np.sign(data) * np.log10(1 + np.abs(data))
 
+
+import matplotlib.collections as mcoll
+import matplotlib.path as mpath
+
+def colorline(
+    x, y, z=None, cmap=plt.get_cmap('viridis'), norm=plt.Normalize(0.0, 1.0),
+        linewidth=3, alpha=1.0):
+    """
+    Plot multiple line segments with a continuous color map
+    Attributes:
+        x (array), y (array): Lists of values of shape (N, T) or (T)
+        z (array): A list of values between 0 and 1, corresponding to the color map 
+            locations
+        norm: The normalization of the colormap
+        cmap: A matplotlib colormap object
+        **kwargs: keyword arguments passed to the LineCollection object. Accepts 
+            standard line properties typically passed to plt.plot
+        
+    This multisegment function is adapted from several single-segment functions:
+    https://stackoverflow.com/questions/8500700/how-to-plot-a-gradient-color-line-in-matplotlib
+    http://nbviewer.ipython.org/github/dpsanders/matplotlib-examples/blob/master/colorline.ipynb
+    http://matplotlib.org/examples/pylab_examples/multicolored_line.html
+    """
+
+    # Default colors equally spaced on [0,1]:
+    if z is None:
+        z = np.linspace(0.0, 1.0, x.shape[-1])
+
+    # Special case if a single number:
+    if not hasattr(z, "__iter__"):  # to check for numerical input -- this is a hack
+        z = np.array([z])
+
+    z = np.asarray(z)
+
+    segments = make_segments(x, y)
+    
+    if len(segments.shape) == 4:
+        z = np.tile(z, segments.shape[0])
+        segments = np.reshape(segments, (-1, 2, 2))
+    lc = mcoll.LineCollection(segments, array=z, cmap=cmap, norm=norm,
+                              linewidth=linewidth, alpha=alpha)
+
+    ax = plt.gca()
+    ax.add_collection(lc)
+
+    return lc
+
+
+
+
 #############################################################
 #
 #
@@ -239,6 +289,34 @@ def split_log(data, base=10):
 #
 #
 ############################################################
+
+def make_segments(x, y):
+    """
+    Create list of line segments from x and y coordinates, in the correct format
+    for the LineCollection constructor
+    
+    Attributes:
+        x (array), y (array): A list of x and y coordinates of shape (T,) 
+            or (N_segments, T)
+    
+    Returns:
+        segments (array): an array of the form numlines x (points per line) x 2 (x
+            and y) array
+            
+    This multisegment function is adapted from a several single-segment function:
+    https://stackoverflow.com/questions/8500700/how-to-plot-a-gradient-color-line-in-matplotlib
+    """
+    if len(np.squeeze(x).shape) > 1:
+        #print("tt")
+        points = np.dstack([x, y])
+        #points = np.reshape(points, (x.shape[0]))
+        #print(x.shape, points.shape)
+        segments = np.stack((points[:, :-1, :], points[:, 1:, :]), axis=-1)
+        segments = np.moveaxis(segments, (-1, -2), (-2, -1))
+    else:
+        points = np.array([x, y]).T.reshape(-1, 1, 2)
+        segments = np.concatenate([points[:-1], points[1:]], axis=1)
+    return segments
 
 def font_size(size, ax=None):
     """
@@ -304,6 +382,69 @@ def cmap1D(col1, col2, N):
         vr.append(np.linspace(col1[ii],col2[ii],N))
     colist = np.array(vr).T
     return [tuple(thing) for thing in colist]
+
+
+
+from matplotlib.colors import ListedColormap, LinearSegmentedColormap
+
+def make_linear_cmap(color_list, name="CustomColormap", alpha=None):
+    """
+    Create a linear interpolating colormap from a list of colors. For now, stick to
+    using the built-in:
+    
+    from matplotlib.colors import LinearSegmentedColormap
+    LinearSegmentedColormap.from_list("CustomColormap", color_list)
+    
+    Attributes:
+        color_list (list): List of (R, G, B) values scaled between 0 and 1
+        alpha (None or array): List of alpha (transparency) values for each 
+            color in the gradient
+        
+    Returns:
+        cmap: A matplotlib LinearSegmentedColormap object
+        
+    Development:
+        "alpha" is not working, likely due to draworder issues
+    
+    """
+    
+    return LinearSegmentedColormap.from_list(name, color_list)
+    
+    # ## code below is for development purposes
+    
+    # n = len(color_list)
+    # color_list = np.array(color_list)
+    
+    # linear_gradient = np.linspace(0, 1, n)
+    # template = np.zeros((n, 3))
+    
+    
+    # template[:, 0] = linear_gradient
+    
+    # template_r, template_g, template_b = (np.copy(template), 
+    #                                       np.copy(template), 
+    #                                       np.copy(template))
+    
+    # #print(template_r, color_list[0, :])
+    # template_r[:, 1:3] = color_list[:, 0][:, None]
+    # template_g[:, 1:3] = color_list[:, 1][:, None]
+    # template_b[:, 1:3] = color_list[:, 2][:, None]
+    
+    
+    # cdict = {'red': template_r,
+    #      'green': template_g,
+    #      'blue': template_b
+    #     }
+    
+    # if alpha:
+    #     #print("t")
+    #     cdict["alpha"] = np.vstack([linear_gradient, linear_gradient, linear_gradient]).T
+    # #print(cdict)
+    # cmap =  LinearSegmentedColormap(name=name, segmentdata=cdict)
+    # return cmap
+
+
+
 
 def coords_to_image(x, y, z, **kwargs):
     """Given a list of x, y, z values, interpolate onto 
