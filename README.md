@@ -10,18 +10,19 @@ Dependencies
 
 Install via pip
 
-   pip install git+git://github.com/williamgilpin/dysts
+	pip install git+git://github.com/williamgilpin/dysts
 
 
 
 ## Example usage
-   
-   import numpy as np
-   from degas.degas import plot_err
-   
-   x = np.linspace(0, 1, 100)
-   y = x**3
-   err = .05*np.random.random(len(x))
-   
-   plot_err(y, err, x=x)
 
+```python3
+import numpy as np
+from degas.degas import plot_err
+   
+x = np.linspace(0, 1, 100)
+y = x**3
+err = .05*np.random.random(len(x))
+
+plot_err(y, err, x=x)
+```
