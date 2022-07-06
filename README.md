@@ -8,6 +8,12 @@ Dependencies
 + matplotlib
 + numpy
 
+Install via pip
+
+   pip install git+git://github.com/williamgilpin/dysts
+
+
+
 ## Example usage
    
    import numpy as np
