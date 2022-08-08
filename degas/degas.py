@@ -8,15 +8,17 @@ from scipy.interpolate import griddata
 ## Easy split y axis function
 
 # degas high contrast color scheme
-blue, red, turquoise, purple, magenta, orange, gray  = [[0.372549, 0.596078, 1], 
-                                                  [1.0, .3882, .2784], 
-                                                  [0.20784314, 0.67843137, 0.6], 
-                                                  [0.59607843, 0.25882353, 0.89019608],
-                                                  [0.803922, 0.0627451, 0.462745], 
-                                                  [0.917647, 0.682353, 0.105882],
-                                                  [0.7, 0.7, 0.7]
-                                                  ]
+high_contrast = [
+    [0.372549, 0.596078, 1], 
+    [1.0, .3882, .2784], 
+    [0.20784314, 0.67843137, 0.6], 
+    [0.59607843, 0.25882353, 0.89019608],
+    [0.803922, 0.0627451, 0.462745], 
+    [0.917647, 0.682353, 0.105882],
+    [0.7, 0.7, 0.7]
+]
 
+blue, red, turquoise, purple, magenta, orange, gray  = high_contrast
 
 pastel_rainbow = np.array([
     [221, 59,  53],
@@ -34,7 +36,9 @@ pastel_rainbow = np.array([
     [163, 218, 133],
     [136, 159, 122],
     [168, 192, 221]
-    ])/255.
+])/255.
+
+pastel_rainbow_alt = pastel_rainbow[[0, 5, 3, 1, 7, 4, 2, 8, 6, 9, 10, 11]]
 
 # degas line plot colors
 royal_purple = np.array((120, 81, 169))/255.
@@ -77,22 +81,31 @@ def fixed_aspect_ratio(ratio, ax=None,
 #
 ############################################################
 
-def plot_err(y, errs, 
-    color=(0,0,0), 
+def plot_err(y, 
+    errs, 
     x=[], 
+    color=(0,0,0), 
     alpha=.4, 
     linewidth=1, 
-    log=False,
+    loglog=False,
     **kwargs):
     """
-    errs : Nx1 or Nx2 ndarray
-    kwargs : passed to plot
+    Plot a curve with error bars
+
+    Args:
+        y (array): A list of values
+        errs (array): A list of errors, or a pair of lists of upper
+            and lower errors
+        x (array): A list of x positions
+        color (3-tuple): The color of the plot lines and error bars
+        alpha (float): The transparency level of the error bars
+        kwargs: passed to plot
     """
     if len(x) < 1:
         x = np.arange(len(y))
     
-    if len(errs.shape)>1:
-        if errs.shape[1]==2:
+    if len(errs.shape) > 1:
+        if errs.shape[1] == 2:
             err_lo, err_hi = errs[:, 0], errs[:, 1]
     else:
         err_lo = errs
@@ -102,7 +115,7 @@ def plot_err(y, errs,
     
     plt.fill_between(x, trace_lo, trace_hi, color=lighter(color), alpha=alpha)
     plt.plot(x, y, color=color, linewidth=linewidth, **kwargs)
-    if log:
+    if loglog:
         plt.yscale('log', nonposy='clip')
         plt.xscale('log', nonposy='clip')
     # return ax
