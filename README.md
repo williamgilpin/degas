@@ -10,7 +10,7 @@ Dependencies
 
 Install via pip
 
-	pip install git+git://github.com/williamgilpin/dysts
+	pip install git+https://github.com/williamgilpin/degas
 
 
 
