@@ -1,7 +1,14 @@
 import os, warnings
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.interpolate import griddata
+
+
+try:
+    import scipy
+    from scipy.interpolate import griddata
+    has_scipy = True
+except ImportError:
+    has_scipy = False
 
 
 ## TODO
@@ -518,6 +525,35 @@ def vanish_axes(gca=None):
     gca.set_axis_off()
     gca.xaxis.set_major_locator(plt.NullLocator())
     gca.yaxis.set_major_locator(plt.NullLocator())
+
+
+def savefig_exact(arr, file_name, target_shape=None, dpi=400, **kwargs):
+    """
+    Save a figure to an exact size in pixels
+
+    Args:
+        arr (np.ndarray): The array to plot
+        file_name (str): The file name to save to
+        target_shape (tuple): The target shape of the figure in pixels
+        dpi (int): The dpi to use
+        **kwargs: Additional arguments to pass to plt.imshow
+
+    """
+    if target_shape is not None:
+        if has_scipy:
+            arr = scipy.signal.resample(arr, target_shape[0], axis=0)
+            arr = scipy.signal.resample(arr, target_shape[1], axis=1)
+        else:
+            warnings,warn("Scipy not installed; skipping resampling")
+
+    fig = plt.figure(frameon=False)
+    fig.set_size_inches(arr.shape[1] / dpi, arr.shape[0] / dpi)
+    ax = plt.Axes(fig, [0., 0., 1., 1.])
+    ax.set_axis_off()
+    fig.add_axes(ax)
+    ax.imshow(arr, **kwargs)
+    plt.savefig(f_name, dpi=(dpi ))
+
 
 
 def better_savefig(name, dpi=300, pad=0.0, pad_inches=0.02, remove_border=False, **kwargs):
