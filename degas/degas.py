@@ -52,6 +52,10 @@ royal_purple = np.array((120, 81, 169))/255.
 
 style_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "styles")
 def set_style(style_name="default"):
+    """
+    Set the style of the plot to one of the styles in the styles folder. This wraps
+    matplotlib's style.use function.
+    """
     plt.style.use(os.path.join(style_path, style_name + ".mplstyle"))
 
 
@@ -200,35 +204,107 @@ def plot3dproj(x, y, z, *args,
 
     return ax
 
-def plot_err(y, errs, 
-    color=(0,0,0), 
-    x=[], 
-    alpha=.4, 
-    linewidth=1, 
-    ax=None,
-    **kwargs):
-    """
-    errs : Nx1 or Nx2 ndarray
-    kwargs : passed to plot
-    """
-    if not ax:
-        ax = plt.gca()
-    if len(x)<1:
-        x = np.arange(len(y))
-    
-    if len(errs.shape)>1:
-        if errs.shape[1]==2:
-            err_lo, err_hi = errs[:, 0], errs[:, 1]
-    else:
-        err_lo = errs
-        err_hi = errs
-        
-    trace_lo, trace_hi = y - err_lo, y + err_hi
-    
-    plt.fill_between(x, trace_lo, trace_hi, color=lighter(color), alpha=alpha)
-    plt.plot(x, y, color=color, linewidth=linewidth, **kwargs)
+# def plot_err(y, errs, 
+#     color=(0,0,0), 
+#     x=[], 
+#     alpha=.4, 
+#     linewidth=1, 
+#     ax=None,
+#     **kwargs):
+#     """
+#     Plot a curve with error bars
 
-    return ax
+#     Args:
+#         y (array): A list of values
+#         errs (array): A list of errors, or a pair of lists of upper and lower errors
+#         x (array): A list of x positions
+#         color (3-tuple): The color of the plot lines and error bars
+#         alpha (float): The transparency level of the error bars
+#         kwargs: passed to plot
+
+#     """
+#     if not ax:
+#         ax = plt.gca()
+#     if len(x)<1:
+#         x = np.arange(len(y))
+    
+#     if len(errs.shape)>1:
+#         if errs.shape[1]==2:
+#             err_lo, err_hi = errs[:, 0], errs[:, 1]
+#     else:
+#         err_lo = errs
+#         err_hi = errs
+        
+#     trace_lo, trace_hi = y - err_lo, y + err_hi
+    
+#     plt.fill_between(x, trace_lo, trace_hi, color=lighter(color), alpha=alpha)
+#     plt.plot(x, y, color=color, linewidth=linewidth, **kwargs)
+
+#     return ax
+
+def plot_linear_confidence(
+    x, y, ax=None, show_ci=True, show_pi=True, 
+    ci_range=0.95,
+    return_model=False, ci_kwargs={}, pi_kwargs={}, 
+    **kwargs
+    ):
+    """
+    Plot a linear regression with confidence interval and prediction interval.
+
+    Args:
+        x (array-like): x values
+        y (array-like): y values
+        ax (matplotlib.axes.Axes): axes to plot on
+        show_ci (bool): plot confidence interval
+        show_pi (bool): plot prediction interval
+        ci_range (float): range of confidence interval
+        return_model (bool): return model parameters
+        ci_kwargs (dict): passed to plt.fill_between for confidence interval
+        pi_kwargs (dict): passed to plt.fill_between for prediction interval
+        kwargs: passed to plt.plot
+
+    Returns:
+        matplotlib.axes.Axes: axes with plot
+    """
+    if ax is None:
+        ax = plt.gca()
+    x, y = np.asarray(x), np.asarray(y)
+    n, m = len(x), 2
+
+    ci_kwargs0 = {"color" : "gray", "alpha" : 0.2}
+    pi_kwargs0 = {"color" : "gray", "alpha" : 0.1}
+    ci_kwargs0.update(ci_kwargs)
+    pi_kwargs0.update(pi_kwargs)
+    ci_kwargs, pi_kwargs = ci_kwargs0, pi_kwargs0
+
+    slope, intercept = np.polyfit(x, y, 1)
+    y_model = np.polyval([slope, intercept], x)
+    x_mean, y_mean = np.mean(x), np.mean(y)
+    
+    t = scipy.stats.t.ppf(ci_range, n - m) # Students statistic of interval confidence
+    std_error = np.std(y - y_model) / np.sqrt(n / (n - m)) # correct for dof
+    r2 = 1 - np.sum((y - y_model)**2) / np.sum((y - y_mean)**2)
+    mse = 1/n * np.sum( (y - y_model)**2 )
+
+    x_line = np.linspace(np.min(x), np.max(x), 100)
+    y_line = intercept + x_line * slope
+
+    # confidence interval
+    ci = t * std_error * (1/n + (x_line - x_mean)**2 / np.sum((x - x_mean)**2))**.5
+    # prediction interval
+    pi = t * std_error * (1 + 1/n + (x_line - x_mean)**2 / np.sum((x - x_mean)**2))**.5  
+
+    # plotting
+    ax.plot(x_line, y_line, **kwargs)
+    if show_ci:
+        ax.fill_between(x_line, y_line - ci, y_line + ci, **ci_kwargs)
+    if show_pi:
+        ax.fill_between(x_line, y_line - pi, y_line + pi, **pi_kwargs)
+        
+    if not return_model:
+        return ax
+    else:
+        return ax, slope, intercept, r2, mse
 
 def plot_segments(coords, mask, ax=None, **kwargs):
     """
