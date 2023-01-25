@@ -92,6 +92,90 @@ def fixed_aspect_ratio(ratio, ax=None,
 #
 ############################################################
 
+def fit_ellipse(cont, method=0):
+    """
+    Fit an ellipse to a set of points.
+
+    Args:
+        cont (ndarray): The points to fit an ellipse to, containing n ndarray elements
+                        representing each point, each with d elements representing the
+                        coordinates for the point.
+        method (int):   The method to use to fit the ellipse. 1 uses the algebraic method
+                        and 2 uses the geometric method.
+
+    Returns:
+        a (float): The x-coordinate of the center of the ellipse.
+        b (float): The y-coordinate of the center of the ellipse.
+        c (float): The x-radius of the ellipse.
+        d (float): The y-radius of the ellipse.
+        e (float): The angle of the ellipse in radians.
+
+    References:
+        [1] Fitzgibbon, A.W., Pilu, M., and Fischer R.B., Direct least squares fitting 
+            of ellipses, 1996:
+
+    """
+    x, y = cont[:, 0][:, None], cont[:, 1][:, None]
+
+    D = np.hstack([x * x, x * y, y * y, x, y, np.ones(x.shape)])
+    S = np.dot(D.T, D)
+    C = np.zeros([6, 6])
+    C[0, 2] = C[2, 0] = 2
+    C[1, 1] = -1
+    E, V = np.linalg.eig(np.dot(np.linalg.inv(S), C))
+
+    if method == 1:
+        n = np.argmax(np.abs(E))
+    else:
+        n = np.argmax(E)
+    a = V[:, n]
+
+    # Fit ellipse
+    b, c, d, f, g, a = a[1] / 2., a[2], a[3] / 2., a[4] / 2., a[5], a[0]
+    num = b * b - a * c
+    cx = (c * d - b * f) / num
+    cy = (a * f - b * d) / num
+
+    angle = 0.5 * np.arctan(2 * b / (a - c)) * 180 / np.pi
+    up = 2 * (a * f * f + c * d * d + g * b * b - 2 * b * d * f - a * c * g)
+    down1 = (b * b - a * c) * ((c - a) * np.sqrt(1 + 4 * b * b / ((a - c) * (a - c))) - (c + a))
+    down2 = (b * b - a * c) * ((a - c) * np.sqrt(1 + 4 * b * b / ((a - c) * (a - c))) - (c + a))
+    a = np.sqrt(abs(up / down1))
+    b = np.sqrt(abs(up / down2))
+
+    return a*2, b*2, angle
+
+from matplotlib import patches
+def draw_ellipse(points, ax=None, **kwargs):
+    """
+    Draw an ellipse around a cluster of points in 2D.
+    
+    Args:
+        ax (matplotlib.axes.Axes): The axes to draw the ellipse on.
+        points (ndarray): The points in a cluster to enclose with an ellipse, containing n
+                          ndarray elements representing each point, each with d elements
+                          representing the coordinates for the point.
+        **kwargs: Additional keyword arguments to pass to matplotlib.patches.Ellipse.
+
+    Returns:
+        ellipse (matplotlib.patches.Ellipse): The ellipse drawn on the axes.
+
+    Example:
+
+        plt.figure()
+        all_pairs = np.random.random((100, 2))
+        all_pairs = all_pairs @ np.linalg.inv(np.random.random((2, 2)))
+        plt.scatter(all_pairs[:, 0], all_pairs[:, 1])
+        draw_ellipse(plt.gca(), all_pairs, fill=False, edgecolor="red")
+    """
+    if ax is None:
+        ax = plt.gca()
+    width, height, angle = fit_ellipse(points)
+    center = tuple(points.mean(axis=0))
+    ellipse = patches.Ellipse(center, width, height, angle, **kwargs)
+    ax.add_patch(ellipse)
+    return ellipse
+
 def plot_err(y, 
     errs, 
     x=[], 
@@ -104,13 +188,22 @@ def plot_err(y,
     Plot a curve with error bars
 
     Args:
-        y (array): A list of values
-        errs (array): A list of errors, or a pair of lists of upper
-            and lower errors
+        y (array): A list of values to plot
+        errs (array): A list of errors, or a pair of lists of upper and lower errors 
         x (array): A list of x positions
         color (3-tuple): The color of the plot lines and error bars
         alpha (float): The transparency level of the error bars
         kwargs: passed to plot
+
+    Returns:
+        ax (matplotlib.axes.Axes): The axes on which the plot was drawn
+
+    Example:
+        x = np.linspace(0, 10, 100)
+        y = np.sin(x)
+        errs = np.random.random(100) * .1
+        plot_err(y, errs, x=x, color=(0,0,1))
+
     """
     if len(x) < 1:
         x = np.arange(len(y))
