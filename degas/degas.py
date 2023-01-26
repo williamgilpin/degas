@@ -572,7 +572,52 @@ def cmap1D(col1, col2, N):
     colist = np.array(vr).T
     return [tuple(thing) for thing in colist]
 
+def color_sort(color_list, method="hue", reverse=False):
+    """
+    Given a list of RGB colors, sort the colors by their hue.
 
+    Args:
+        color_list (list): A list of RGB colors, each of which is a 3-tuple
+            of floats between 0 and 1.
+        method (str): The method by which to sort the colors. Can be "hue",
+            "red", "green", "blue", or "luminance". Defaults to "hue".
+        reverse (bool): Whether to reverse the order of the colors. Defaults
+            to False.
+
+    Returns:
+        list: A list of colors sorted by the specified method.
+
+    """
+    if method == "hue":
+        from matplotlib.colors import rgb_to_hsv
+        hsv_colors = rgb_to_hsv(color_list)
+        hue = hsv_colors[:, 0]
+        sorted_indices = hue.argsort()
+    elif method == "red":
+        red = color_list[:, 0]
+        sorted_indices = red.argsort()
+    elif method == "green":
+        green = color_list[:, 1]
+        sorted_indices = green.argsort()
+    elif method == "blue":
+        blue = color_list[:, 2]
+        sorted_indices = blue.argsort()
+    elif method == "luminance":
+        from matplotlib.colors import rgb_to_hsv
+        hsv_colors = rgb_to_hsv(color_list)
+        luminance = hsv_colors[:, 2]
+        sorted_indices = luminance.argsort()
+    elif method == "step":
+        from matplotlib.colors import rgb_to_hsv
+        hsv_colors = rgb_to_hsv(color_list)
+        hue = hsv_colors[:, 0]
+        sorted_indices = hue.argsort()
+        sorted_indices = np.concatenate([sorted_indices[::2], sorted_indices[1::2]])
+    else:
+        sorted_indices = np.arange(len(color_list))
+    if reverse:
+        sorted_indices = sorted_indices[::-1]
+    return np.array(color_list)[sorted_indices]
 
 from matplotlib.colors import ListedColormap, LinearSegmentedColormap
 

@@ -11,6 +11,7 @@ lines.antialiased: True
 # patch.antialiased: True
 
 font.family: Open Sans
+ont.sans-serif: Open Sans
 # font.family: Arial
 font.size: 10.0
 
