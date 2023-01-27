@@ -92,58 +92,79 @@ def fixed_aspect_ratio(ratio, ax=None,
 #
 ############################################################
 
-def fit_ellipse(cont, method=0):
-    """
-    Fit an ellipse to a set of points.
+# def fit_ellipse(cont, method=0):
+#     """
+#     Fit an ellipse to a set of points.
 
-    Args:
-        cont (ndarray): The points to fit an ellipse to, containing n ndarray elements
-                        representing each point, each with d elements representing the
-                        coordinates for the point.
-        method (int):   The method to use to fit the ellipse. 1 uses the algebraic method
-                        and 2 uses the geometric method.
+#     Args:
+#         cont (ndarray): The points to fit an ellipse to, containing n ndarray elements
+#                         representing each point, each with d elements representing the
+#                         coordinates for the point.
+#         method (int):   The method to use to fit the ellipse. 1 uses the algebraic method
+#                         and 2 uses the geometric method.
 
-    Returns:
-        a (float): The x-coordinate of the center of the ellipse.
-        b (float): The y-coordinate of the center of the ellipse.
-        c (float): The x-radius of the ellipse.
-        d (float): The y-radius of the ellipse.
-        e (float): The angle of the ellipse in radians.
+#     Returns:
+#         a (float): The x-coordinate of the center of the ellipse.
+#         b (float): The y-coordinate of the center of the ellipse.
+#         c (float): The x-radius of the ellipse.
+#         d (float): The y-radius of the ellipse.
+#         e (float): The angle of the ellipse in radians.
 
-    References:
-        [1] Fitzgibbon, A.W., Pilu, M., and Fischer R.B., Direct least squares fitting 
-            of ellipses, 1996:
+#     References:
+#         [1] Fitzgibbon, A.W., Pilu, M., and Fischer R.B., Direct least squares fitting 
+#             of ellipses, 1996:
 
-    """
-    x, y = cont[:, 0][:, None], cont[:, 1][:, None]
+#     """
+#     x, y = cont[:, 0][:, None], cont[:, 1][:, None]
 
-    D = np.hstack([x * x, x * y, y * y, x, y, np.ones(x.shape)])
-    S = np.dot(D.T, D)
-    C = np.zeros([6, 6])
-    C[0, 2] = C[2, 0] = 2
-    C[1, 1] = -1
-    E, V = np.linalg.eig(np.dot(np.linalg.inv(S), C))
+#     D = np.hstack([x * x, x * y, y * y, x, y, np.ones(x.shape)])
+#     S = np.dot(D.T, D)
+#     C = np.zeros([6, 6])
+#     C[0, 2] = C[2, 0] = 2
+#     C[1, 1] = -1
+#     E, V = np.linalg.eig(np.dot(np.linalg.inv(S), C))
 
-    if method == 1:
-        n = np.argmax(np.abs(E))
-    else:
-        n = np.argmax(E)
-    a = V[:, n]
+#     if method == 1:
+#         n = np.argmax(np.abs(E))
+#     else:
+#         n = np.argmax(E)
+#     a = V[:, n]
 
-    # Fit ellipse
-    b, c, d, f, g, a = a[1] / 2., a[2], a[3] / 2., a[4] / 2., a[5], a[0]
-    num = b * b - a * c
-    cx = (c * d - b * f) / num
-    cy = (a * f - b * d) / num
+#     # Fit ellipse
+#     b, c, d, f, g, a = a[1] / 2., a[2], a[3] / 2., a[4] / 2., a[5], a[0]
+#     num = b * b - a * c
+#     cx = (c * d - b * f) / num
+#     cy = (a * f - b * d) / num
 
-    angle = 0.5 * np.arctan(2 * b / (a - c)) * 180 / np.pi
-    up = 2 * (a * f * f + c * d * d + g * b * b - 2 * b * d * f - a * c * g)
-    down1 = (b * b - a * c) * ((c - a) * np.sqrt(1 + 4 * b * b / ((a - c) * (a - c))) - (c + a))
-    down2 = (b * b - a * c) * ((a - c) * np.sqrt(1 + 4 * b * b / ((a - c) * (a - c))) - (c + a))
-    a = np.sqrt(abs(up / down1))
-    b = np.sqrt(abs(up / down2))
+#     angle = 0.5 * np.arctan(2 * b / (a - c)) * 180 / np.pi
+#     up = 2 * (a * f * f + c * d * d + g * b * b - 2 * b * d * f - a * c * g)
+#     down1 = (b * b - a * c) * ((c - a) * np.sqrt(1 + 4 * b * b / ((a - c) * (a - c))) - (c + a))
+#     down2 = (b * b - a * c) * ((a - c) * np.sqrt(1 + 4 * b * b / ((a - c) * (a - c))) - (c + a))
+#     a = np.sqrt(abs(up / down1))
+#     b = np.sqrt(abs(up / down2))
 
-    return a*2, b*2, angle
+#     return a*2, b*2, angle
+
+def compute_pca(data):
+    """Compute PCA without using sklearn"""
+    data = data - np.mean(data, axis=0)
+    cov = np.cov(data, rowvar=False)
+    eigvals, eigvecs = np.linalg.eig(cov)
+    eigvals = np.real(eigvals)
+    eigvecs = np.real(eigvecs)
+    # sort by eigenvalue
+    idx = np.argsort(eigvals)[::-1]
+    eigvals = eigvals[idx]
+    eigvecs = eigvecs[:, idx]
+    explained_variance = eigvals / np.sum(eigvals)
+    return eigvals, eigvecs, explained_variance
+
+def fit_ellipse(data):
+    eigs, vecs, explained_variance = compute_pca(data)
+    mean = np.mean(data, axis=0)
+    angle = np.arctan2(vecs[1, 0], vecs[0, 0])
+    width, height = 2 * np.sqrt(eigs)
+    return width, height, angle
 
 from matplotlib import patches
 def draw_ellipse(points, ax=None, **kwargs):
@@ -175,6 +196,62 @@ def draw_ellipse(points, ax=None, **kwargs):
     ellipse = patches.Ellipse(center, width, height, angle, **kwargs)
     ax.add_patch(ellipse)
     return ellipse
+
+from scipy.stats import spearmanr, pearsonr
+def plot_cross(all_pairs, scale=0.1, ax=None, slope="pca", scaling="absolute", **kwargs):
+    """
+    Plot crosses along the major and minor axes of a data cloud
+
+    Args:
+        all_pairs (np.ndarray): array of shape (n, 2) with x and y coordinates
+        scale (float): scale of the cross
+        ax (matplotlib.axes.Axes): axes to plot on
+        slope (str): "pca" or "spearman" or "pearson" to determine the slope of the cross
+        scaling (str): "absolute" or "relative" or "equal" to determine the scaling of 
+            the cross
+        **kwargs: keyword arguments passed to plt.plot
+
+    Returns:
+        matplotlib.axes.Axes: axes with the cross
+    """
+    x, y = np.mean(all_pairs, axis=0)
+    scale1, scale2, ang = fit_ellipse(all_pairs)
+
+    if ax is None:
+        ax = plt.gca()
+
+    if scaling == "relative":
+        scale_max = np.max([scale1, scale2])
+        scale1 = scale1 / scale_max
+        scale2 = scale2 / scale_max
+    if scaling == "absolute":
+        scale1 = scale1
+        scale2 = scale2
+    if scaling == "equal":
+        scale1 = 1
+        scale2 = 1
+
+    if slope == "spearman":
+        ang = np.arctan(spearmanr(all_pairs[:, 0], all_pairs[:, 1])[0])
+
+    if slope == "pearson":
+        ang = np.arctan(np.corrcoef(all_pairs[:, 0], all_pairs[:, 1])[0, 1])
+
+    ## plot a line at the angle of the ellipse
+    vec1 = np.array([
+        [x - scale * scale1 * np.cos(ang), x + scale * scale1 * np.cos(ang)],
+        [y - scale * scale1 * np.sin(ang), y + scale * scale1 * np.sin(ang)],
+    ])
+    ## define a vector at a 90 degree angle
+    ang = ang + np.pi / 2
+    vec2 = np.array([
+        [x - scale * scale2 * np.cos(ang), x + scale * scale2 * np.cos(ang)],
+        [y - scale * scale2 * np.sin(ang), y + scale * scale2 * np.sin(ang)],
+    ])  
+
+    ax.plot(vec1[0], vec1[1], **kwargs)
+    ax.plot(vec2[0], vec2[1], **kwargs)
+    return ax
 
 def plot_err(y, 
     errs, 
