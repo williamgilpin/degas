@@ -198,23 +198,37 @@ def draw_ellipse(points, ax=None, **kwargs):
     return ellipse
 
 from scipy.stats import spearmanr, pearsonr
-def plot_cross(all_pairs, scale=0.1, ax=None, slope="pca", scaling="absolute", **kwargs):
+def plot_cross(all_pairs, scale=0.1, ax=None, center="mean", slope="pca", scaling="absolute", **kwargs):
     """
     Plot crosses along the major and minor axes of a data cloud
 
     Args:
         all_pairs (np.ndarray): array of shape (n, 2) with x and y coordinates
+        ax (matplotlib.axes.Axes): axes to plot on. If None, plt.gca() is used
+        center (str): "mean" or "median" to determine the center of the cross
         scale (float): scale of the cross
-        ax (matplotlib.axes.Axes): axes to plot on
-        slope (str): "pca" or "spearman" or "pearson" to determine the slope of the cross
+        slope (str): "pca" or "spearman" or "pearson" to determine the slope of the 
+            cross. If "pca", the slope is determined by the principal components, if 
+            "spearman", the slope is determined by the spearman correlation, and if
+            "pearson", the slope is determined by the pearson correlation.
         scaling (str): "absolute" or "relative" or "equal" to determine the scaling of 
-            the cross
+            the cross. If "absolute", the cross is scaled to the absolute values of the
+            principal components, if "relative", the cross is scaled to a maximum width,
+            but the aspect ratio from the principal components is preserved, and if
+             "equal", both arms of the cross are scaled to the same length.
         **kwargs: keyword arguments passed to plt.plot
 
     Returns:
         matplotlib.axes.Axes: axes with the cross
     """
-    x, y = np.mean(all_pairs, axis=0)
+    if center == "median":
+        x, y = np.median(all_pairs, axis=0)
+    elif center == "mean":
+        x, y = np.mean(all_pairs, axis=0)
+    else:
+        warnings.warn("Unknown centering method. Using mean.")
+        x, y = np.mean(all_pairs, axis=0)
+
     scale1, scale2, ang = fit_ellipse(all_pairs)
 
     if ax is None:
