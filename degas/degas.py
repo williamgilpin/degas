@@ -198,7 +198,15 @@ def draw_ellipse(points, ax=None, **kwargs):
     return ellipse
 
 from scipy.stats import spearmanr, pearsonr
-def plot_cross(all_pairs, scale=0.1, ax=None, center="mean", slope="pca", scaling="absolute", **kwargs):
+def plot_cross(all_pairs, 
+               scale=0.1, 
+               ax=None, 
+               center="mean", 
+               aspect=1,
+               flip=False, 
+               slope="pca", 
+               scaling="absolute", 
+               **kwargs):
     """
     Plot crosses along the major and minor axes of a data cloud
 
@@ -246,20 +254,24 @@ def plot_cross(all_pairs, scale=0.1, ax=None, center="mean", slope="pca", scalin
         scale2 = 1
 
     if slope == "spearman":
-        ang = np.arctan(spearmanr(all_pairs[:, 0], all_pairs[:, 1])[0])
+        ang = np.arctan(spearmanr(all_pairs[:, 0], all_pairs[:, 1], nan_policy="omit")[0])
 
     if slope == "pearson":
         ang = np.arctan(np.corrcoef(all_pairs[:, 0], all_pairs[:, 1])[0, 1])
 
+    if flip:
+        ang = ang + np.pi / 2
+        # scale2 = scale1
+
     ## plot a line at the angle of the ellipse
     vec1 = np.array([
-        [x - scale * scale1 * np.cos(ang), x + scale * scale1 * np.cos(ang)],
+        [x - scale * scale1 * np.cos(ang) * aspect, x + scale * scale1 * np.cos(ang) * aspect],
         [y - scale * scale1 * np.sin(ang), y + scale * scale1 * np.sin(ang)],
     ])
     ## define a vector at a 90 degree angle
     ang = ang + np.pi / 2
     vec2 = np.array([
-        [x - scale * scale2 * np.cos(ang), x + scale * scale2 * np.cos(ang)],
+        [x - scale * scale2 * np.cos(ang) * aspect, x + scale * scale2 * np.cos(ang) * aspect],
         [y - scale * scale2 * np.sin(ang), y + scale * scale2 * np.sin(ang)],
     ])  
 
@@ -429,7 +441,10 @@ def plot3dproj(x, y, z, *args,
 def plot_linear_confidence(
     x, y, ax=None, show_ci=True, show_pi=True, 
     ci_range=0.95,
-    return_model=False, ci_kwargs={}, pi_kwargs={}, 
+    return_model=False, 
+    extend_fraction=0.0,
+    ci_kwargs={}, 
+    pi_kwargs={}, 
     **kwargs
     ):
     """
@@ -443,6 +458,8 @@ def plot_linear_confidence(
         show_pi (bool): plot prediction interval
         ci_range (float): range of confidence interval
         return_model (bool): return model parameters
+        extend_fraction (float): extend confidence/prediction interval by this amount
+            outside of the data range
         ci_kwargs (dict): passed to plt.fill_between for confidence interval
         pi_kwargs (dict): passed to plt.fill_between for prediction interval
         kwargs: passed to plt.plot
@@ -470,7 +487,26 @@ def plot_linear_confidence(
     r2 = 1 - np.sum((y - y_model)**2) / np.sum((y - y_mean)**2)
     mse = 1/n * np.sum( (y - y_model)**2 )
 
-    x_line = np.linspace(np.min(x), np.max(x), 100)
+    x_min, x_max = np.min(x), np.max(x)
+    if np.sign(x_min) == np.sign(x_max) and np.sign(x_max) > 0:
+        x_line = np.linspace(
+            np.min(x) * (1 - extend_fraction), 
+            np.max(x) * (1 + extend_fraction), 
+            100
+        )
+    elif np.sign(x_min) == np.sign(x_max) and np.sign(x_max) < 0:
+        x_line = np.linspace(
+            np.min(x) * (1 + extend_fraction), 
+            np.max(x) * (1 - extend_fraction), 
+            100
+        )
+    else:
+        x_line = np.linspace(
+            np.min(x) * (1 + extend_fraction), 
+            np.max(x) * (1 + extend_fraction), 
+            100
+        )
+    print("----\n", flush=True)
     y_line = intercept + x_line * slope
 
     # confidence interval
@@ -504,6 +540,51 @@ def plot_segments(coords, mask, ax=None, **kwargs):
         ax.plot(*coords[start:start+run].T, **kwargs)
 
     return ax
+
+def dim_axes(ax=None, alpha=0.5):
+    """
+    Fade all ticks and frames on a plot. 
+
+    Args:
+        ax (matplotlib.axes.Axes): The axes to dim. If None, use the current axes.
+        alpha (float): The alpha value to use for the dimming.
+
+    """
+    if ax is None:
+        ax = plt.gca()
+    ax.spines["bottom"].set_alpha(alpha)
+    ax.spines["left"].set_alpha(alpha)
+    ax.spines["top"].set_alpha(alpha)
+    ax.spines["right"].set_alpha(alpha)
+    ax.xaxis.label.set_alpha(alpha)
+    ax.yaxis.label.set_alpha(alpha)
+    ax.tick_params(axis="x", grid_alpha=alpha)
+    ax.tick_params(axis="y", grid_alpha=alpha)
+    ## dim the tick labels
+    for tick in ax.get_xticklabels():
+        tick.set_alpha(alpha)
+    for tick in ax.get_yticklabels():
+        tick.set_alpha(alpha)
+
+    ## dim the tick lines
+    for tick in ax.get_xticklines():
+        tick.set_alpha(alpha)
+    for tick in ax.get_yticklines():
+        tick.set_alpha(alpha)
+
+
+    ## for 3d plots
+    if  ax.name == "3d":
+        print("dimming 3d axes")
+        for tick in ax.get_zticklabels():
+            tick.set_alpha(alpha)
+        for tick in ax.get_zticklines():
+            tick.set_alpha(alpha)
+        ## axes
+        ax.w_xaxis.line.set_alpha(alpha)
+        ax.w_yaxis.line.set_alpha(alpha)
+        ax.w_zaxis.line.set_alpha(alpha)
+
 
 def split_log(data, base=10):
 	"""
@@ -861,27 +942,28 @@ def savefig_exact(arr, file_name, target_shape=None, dpi=400, **kwargs):
 
 
 
-def better_savefig(name, dpi=300, pad=0.0, pad_inches=0.02, remove_border=False, **kwargs):
+def better_savefig(
+        name, 
+        dpi=300, 
+        pad=0.0, 
+        pad_inches=0.02, 
+        remove_border=False, 
+        dryrun=False,
+        **kwargs
+    ):
     """This function is for saving images without a bounding box and at the proper resolution
         The tiff files produced are huge because compression is not currently supported by 
         matplotlib
     
-    Parameters
-    ----------
-    name : str
-        The string containing the name of the desired save file and its resolution
-        
-    dpi : int
-        The desired dots per linear inch
-    
-    pad : float
-        Add a tiny amount of whitespace if necessary
-        
-    remove_border : bool
-        Whether to remove axes and padding (for example, for images)
+    Args:
+        name (str): The string containing the name of the desired save file and its 
+            resolution
+        dpi (int): The desired dots per linear inch
+        pad (float): Add a tiny amount of whitespace if necessary
+        remove_border (bool): Whether to remove axes and padding (e.g. for images)
+        dryrun (bool): If True, don't actually save the file
+        **kwargs: passed on to matplotlib's built-in "savefig" function
 
-    kwargs : passed on to matplotlib's built-in "savefig" function
-    
     """
     if remove_border:
         plt.gca().set_axis_off()
@@ -891,5 +973,6 @@ def better_savefig(name, dpi=300, pad=0.0, pad_inches=0.02, remove_border=False,
         plt.gca().xaxis.set_major_locator(plt.NullLocator())
         plt.gca().yaxis.set_major_locator(plt.NullLocator())
 
-    plt.savefig(name, bbox_inches='tight', pad_inches=pad_inches, dpi=dpi)
+    if not dryrun:
+        plt.savefig(name, bbox_inches='tight', pad_inches=pad_inches, dpi=dpi)
 
