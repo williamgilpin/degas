@@ -14,6 +14,27 @@ except ImportError:
 ## TODO
 ## Easy split y axis function
 
+def plot_splity(x, y1, y2, ax=None, kwargs1=None, kwargs2=None):
+    """
+    Plot two y-axes on the same plot with a split y axis. This is useful for
+    plotting two quantities with very different scales on the same plot. Separate ticks
+    and labels are used for each y axis
+    """
+    if not ax:
+        ax = plt.gca()
+    if not kwargs1:
+        kwargs1 = {}
+    if not kwargs2:
+        kwargs2 = {}
+    ax.plot(x, y1, **kwargs1)
+    ax2 = ax.twinx()
+    ax2.plot(x, y2, **kwargs2)
+    ax.set_zorder(ax2.get_zorder() + 1)
+    ax.patch.set_visible(False)
+    ax2.patch.set_visible(True)
+    return ax, ax2
+
+
 # degas high contrast color scheme
 high_contrast = [
     [0.372549, 0.596078, 1], 
@@ -145,8 +166,43 @@ def fixed_aspect_ratio(ratio, ax=None,
 
 #     return a*2, b*2, angle
 
+
+def make_snapshot_grid(data_list, nx=10, ny=10):
+    """
+    Make a grid of snapshots from a list of data points, and return a concatenated
+    image in the form of a numpy array.
+
+    Args:
+        data_list (list): a list of data points, each of which is a 2D array
+        nx, ny (int): the number of snapshots along each axis
+
+    Returns:
+        grid (ndarray): a concatenated image of the snapshots
+    """
+    n = len(data_list)
+    n_gap = nx * ny
+    im_list = list(data_list[::(n // n_gap)])[:n_gap]
+    # split into nx sublists
+    im_list = [im_list[i:i + nx] for i in range(0, len(im_list), nx)]
+    # concatenate each sublist horizontally
+    im_list = [np.hstack(im) for im in im_list]
+    # concatenate each horizontal sublist vertically
+    grid = np.vstack(im_list)
+    return grid
+
 def compute_pca(data):
-    """Compute PCA without using sklearn"""
+    """
+    Compute PCA without using sklearn
+    
+    Args:
+        data (ndarray): the data to compute PCA on, with shape (n_samples, n_features)
+
+    Returns:
+        eigvals (ndarray): the eigenvalues of the covariance matrix
+        eigvecs (ndarray): the eigenvectors of the covariance matrix
+        explained_variance (ndarray): the explained variance of each principal component
+
+    """
     data = data - np.mean(data, axis=0)
     cov = np.cov(data, rowvar=False)
     eigvals, eigvecs = np.linalg.eig(cov)
@@ -160,7 +216,21 @@ def compute_pca(data):
     return eigvals, eigvecs, explained_variance
 
 def fit_ellipse(data):
-    eigs, vecs, explained_variance = compute_pca(data)
+    """
+    Fit an ellipse to a set of points.
+
+    Args:
+        data (ndarray): The points to fit an ellipse to, containing n ndarray elements
+                        representing each point, each with d elements representing the
+                        coordinates for the point.
+
+    Returns:
+        width (float): The width of the ellipse.
+        height (float): The height of the ellipse.
+        angle (float): The angle of the ellipse in radians.
+
+    """
+    eigs, vecs, _ = compute_pca(data)
     mean = np.mean(data, axis=0)
     angle = np.arctan2(vecs[1, 0], vecs[0, 0])
     width, height = 2 * np.sqrt(eigs)
