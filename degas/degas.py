@@ -61,7 +61,7 @@ pastel_rainbow_alt = pastel_rainbow[[0, 5, 3, 1, 7, 4, 2, 8, 6, 9, 10, 11]]
 royal_purple = np.array((120, 81, 169))/255.
 
 # Blue-Black-Red colormap
-blbkrd = dg.make_linear_cmap([dg.blue, 'k', dg.red])
+blbkrd = make_linear_cmap([blue, 'k', red])
 
 style_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "styles")
 def set_style(style_name="default"):
