@@ -60,9 +60,6 @@ pastel_rainbow_alt = pastel_rainbow[[0, 5, 3, 1, 7, 4, 2, 8, 6, 9, 10, 11]]
 # degas line plot colors
 royal_purple = np.array((120, 81, 169))/255.
 
-# Blue-Black-Red colormap
-blbkrd = make_linear_cmap([blue, 'k', red])
-
 style_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "styles")
 def set_style(style_name="default"):
     """
@@ -1057,4 +1054,7 @@ def better_savefig(
 
     if not dryrun:
         plt.savefig(name, bbox_inches='tight', pad_inches=pad_inches, dpi=dpi)
+
+# Blue-Black-Red colormap
+blbkrd = make_linear_cmap([blue, 'k', red])
 
