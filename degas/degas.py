@@ -14,26 +14,15 @@ except ImportError:
 ## TODO
 ## Easy split y axis function
 
-def plot_splity(x, y1, y2, ax=None, kwargs1=None, kwargs2=None):
-    """
-    Plot two y-axes on the same plot with a split y axis. This is useful for
-    plotting two quantities with very different scales on the same plot. Separate ticks
-    and labels are used for each y axis
-    """
-    if not ax:
-        ax = plt.gca()
-    if not kwargs1:
-        kwargs1 = {}
-    if not kwargs2:
-        kwargs2 = {}
-    ax.plot(x, y1, **kwargs1)
-    ax2 = ax.twinx()
-    ax2.plot(x, y2, **kwargs2)
-    ax.set_zorder(ax2.get_zorder() + 1)
-    ax.patch.set_visible(False)
-    ax2.patch.set_visible(True)
-    return ax, ax2
 
+
+#############################################################
+#
+#
+#   Color schemes and themes
+#
+#
+############################################################
 
 # degas high contrast color scheme
 high_contrast = [
@@ -71,6 +60,9 @@ pastel_rainbow_alt = pastel_rainbow[[0, 5, 3, 1, 7, 4, 2, 8, 6, 9, 10, 11]]
 # degas line plot colors
 royal_purple = np.array((120, 81, 169))/255.
 
+# Blue-Black-Red colormap
+blbkrd = dg.make_linear_cmap([dg.blue, 'k', dg.red])
+
 style_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "styles")
 def set_style(style_name="default"):
     """
@@ -79,6 +71,26 @@ def set_style(style_name="default"):
     """
     plt.style.use(os.path.join(style_path, style_name + ".mplstyle"))
 
+
+def plot_splity(x, y1, y2, ax=None, kwargs1=None, kwargs2=None):
+    """
+    Plot two y-axes on the same plot with a split y axis. This is useful for
+    plotting two quantities with very different scales on the same plot. Separate ticks
+    and labels are used for each y axis
+    """
+    if not ax:
+        ax = plt.gca()
+    if not kwargs1:
+        kwargs1 = {}
+    if not kwargs2:
+        kwargs2 = {}
+    ax.plot(x, y1, **kwargs1)
+    ax2 = ax.twinx()
+    ax2.plot(x, y2, **kwargs2)
+    ax.set_zorder(ax2.get_zorder() + 1)
+    ax.patch.set_visible(False)
+    ax2.patch.set_visible(True)
+    return ax, ax2
 
 def fixed_aspect_ratio(ratio, ax=None, 
 	log=False, semilogy=False, semilogx=False):
