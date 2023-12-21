@@ -98,8 +98,8 @@ def fixed_aspect_ratio(ratio, ax=None,
     if not ax:
         ax = plt.gca()
     xvals, yvals = ax.axes.get_xlim(), ax.axes.get_ylim()
-    xrange = xvals[1] - xvals[0]
-    yrange = yvals[1] - yvals[0]
+    xrange = np.abs(xvals[1] - xvals[0])
+    yrange = np.abs(yvals[1] - yvals[0])
     if log:
         xrange = np.log10(xvals[1]) - np.log10(xvals[0])
         yrange = np.log10(yvals[1]) - np.log10(yvals[0])
@@ -174,6 +174,46 @@ def fixed_aspect_ratio(ratio, ax=None,
 #     b = np.sqrt(abs(up / down2))
 
 #     return a*2, b*2, angle
+
+# def imadjust(im0, threshold=.01):
+#     """
+#     Adjust the contrast of an image by setting the lowest and highest values to 0 and 1,
+#     respectively, and linearly scaling the values in between.
+
+#     Args:
+#         im0 (ndarray): the image to adjust
+#         threshold (float): the fraction of pixels to set to 0 and 1, or, if a tuple,
+#                 the fraction of pixels to set to 0 and 1 in the lower and upper tails,
+#                 respectively.
+
+#     Returns:
+#         im (ndarray): the adjusted image
+
+#     """
+#     if isinstance(threshold, (list, tuple, np.ndarray)):
+#         low_threshold, high_threshold = threshold
+#     else:
+#         low_threshold, high_threshold = threshold,threshold
+    
+#     im = np.copy(im0)
+#     if max(im.ravel) > 1:
+#         im = im.astype(float) / 255.
+    
+#     if len(im.shape)==2:
+#         im = im[..., :]
+    
+#     for chan_ind in range(im.shape[2]):
+#         if chan_ind < 3:
+#             chan = np.copy(im[..., chan_ind])
+
+#             lo_edge = np.percentile(np.ravel(chan), 100.*low_threshold)
+#             hi_edge = np.percentile(np.ravel(chan), 100.*(1.-high_threshold))
+#             new_chan = (chan - lo_edge)/(hi_edge - lo_edge)
+#             new_chan[new_chan < 0.0]=0.0
+#             new_chan[new_chan > 1.0]=1.0
+#             im[...,chan_ind] = new_chan
+        
+#     return(im)
 
 
 def make_snapshot_grid(data_list, nx=10, ny=10):
@@ -357,6 +397,36 @@ def plot_cross(all_pairs,
     ax.plot(vec1[0], vec1[1], **kwargs)
     ax.plot(vec2[0], vec2[1], **kwargs)
     return ax
+
+
+def scatter_lines(x, y, s=None, c=None, **kwargs):
+    """
+    Scatter plot with lines connecting the points. The line segments will match
+    the color of the point they start at, and their width will match the size
+    of the point.
+
+    Args:
+        x, y (array_like, shape (n, )): Input data
+        s (scalar or array_like, shape (n, ), optional): Size of the points.
+        c (color, sequence, or sequence of color, optional): The marker colors.
+        **kwargs: Additional keyword arguments are passed through to plt.scatter
+    """
+    # Create scatter plot
+    scatter = plt.scatter(x, y, s=s, c=c, **kwargs)
+
+    # Extract colors from the scatter plot
+    colors = scatter.to_rgba(c)
+    if np.isscalar(s):
+        sizes = np.full_like(x, s)
+    else:
+        sizes = s
+
+    ## Loop to draw lines connecting all points
+    for i in range(len(x) - 1):
+        plt.plot(x[i:i+2], y[i:i+2], color=colors[i], linewidth=np.sqrt(sizes[i])/10)
+
+    return scatter
+
 
 def plot_err(y, 
     errs, 
