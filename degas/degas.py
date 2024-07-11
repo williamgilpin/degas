@@ -75,6 +75,17 @@ def plot_splity(x, y1, y2, ax=None, kwargs1=None, kwargs2=None):
     Plot two y-axes on the same plot with a split y axis. This is useful for
     plotting two quantities with very different scales on the same plot. Separate ticks
     and labels are used for each y axis
+
+    Args:
+        x (array-like): x values
+        y1 (array-like): y values for the first axis
+        y2 (array-like): y values for the second axis
+        ax (matplotlib.axes.Axes): axes to plot on. If None, use plt.gca()
+        kwargs1 (dict): keyword arguments to pass to the plot
+
+    Returns:
+        ax (matplotlib.axes.Axes): axes with the plot
+        ax2 (matplotlib.axes.Axes): axes with the second y axis
     """
     if not ax:
         ax = plt.gca()
@@ -90,12 +101,21 @@ def plot_splity(x, y1, y2, ax=None, kwargs1=None, kwargs2=None):
     ax2.patch.set_visible(True)
     return ax, ax2
 
-def fixed_aspect_ratio(ratio, ax=None, 
-	log=False, semilogy=False, semilogx=False):
-    '''
-    Set a fixed aspect ratio on matplotlib plots 
-    regardless of axis units
-    '''
+def fixed_aspect_ratio(ratio, ax=None, log=False, semilogy=False, semilogx=False):
+    """
+    Set a fixed aspect ratio on matplotlib plots, regardless of axis units
+
+    Args:
+        ratio (float): The desired aspect ratio
+        ax (matplotlib.axes.Axes): The axes to set the aspect ratio on. If None, use the
+            current axes.
+        log (bool): Whether to use a log scale
+        semilogy (bool): Whether to use a semilog scale on the y axis
+        semilogx (bool): Whether to use a semilog scale on the x axis
+
+    Returns:
+        ax (matplotlib.axes.Axes): The axes with the aspect ratio set
+    """
     if not ax:
         ax = plt.gca()
     xvals, yvals = ax.axes.get_xlim(), ax.axes.get_ylim()
@@ -681,6 +701,16 @@ def plot_segments(coords, mask, ax=None, **kwargs):
     """
     Given a set of coordinates, and a boolean mask, find consecutive 
     runs of coordinates and plot them as connected lines
+
+    Args:
+        coords (ndarray): The coordinates to plot, with shape (n, 2)
+        mask (ndarray): A boolean mask with shape (n,) indicating which 
+            coordinates to plot
+        ax (matplotlib.axes.Axes): The axes to plot on
+        **kwargs: passed to plt.plot
+
+    Returns:
+        ax (matplotlib.axes.Axes): The axes with the plot
     """
     if not ax:
         fig = plt.figure()
@@ -832,22 +862,34 @@ def make_segments(x, y):
 
 def font_size(size, ax=None):
     """
-    size : int
-        Font size in pts
+    Set the font size of all text elements in a plot
+
+    Args:
+        size (int): The font size to set
+        ax (matplotlib.axes.Axes): The axes to set the font size on. If None, use the
+            current axes.
+
+    Returns:
+        ax (matplotlib.axes.Axes): The axes with the font size set
     """
     if not ax:
         ax = plt.gca()
     for item in ([ax.axes.title, ax.axes.xaxis.label, ax.axes.yaxis.label] +
                  ax.axes.get_xticklabels() + ax.axes.get_yticklabels()):
         item.set_fontsize(size)
+    return ax
 
 
 def lighter(clr, f=1/3):
     """
-    An implementation of Mathematica's Lighter[] 
-    function for RGB colors
-    clr : 3-tuple or list, an RGB color
-    f : float, the fraction by which to brighten
+    Lighten an RGB color value. Based on Mathematica's Lighter[] function for RGB colors
+    
+    Args:
+        clr (3-tuple): An RGB color
+        f (float): The fraction by which to brighten the color
+    
+    Returns:
+        new_clr (3-tuple): The new, lightened color
     """
     gaps = [f*(1 - val) for val in clr]
     new_clr = [val + gap for gap, val in zip(gaps, clr)]
@@ -855,10 +897,14 @@ def lighter(clr, f=1/3):
 
 def darker(clr, f=1/3):
     """
-    An implementation of Mathematica's Darker[] 
-    function for RGB colors
-    clr : 3-tuple or list, an RGB color
-    f : float, the fraction by which to brighten
+    Darken an RGB color value. Based on Mathematica's Darker[] function for RGB colors
+
+    Args:
+        clr (3-tuple): An RGB color
+        f (float): The fraction by which to darken the color
+
+    Returns:
+        new_clr (3-tuple): The new, darkened color
     """
     gaps = [f*val for val in clr]
     new_clr = [val - gap for gap, val in zip(gaps, clr)]
@@ -868,24 +914,14 @@ def cmap1D(col1, col2, N):
     """
     Generate a continuous colormap between two values
     
-    Parameters
-    ----------
-    col1 : tuple of ints
-        RGB values of final color
-        
-    col2 : tuple of ints
-        RGB values of final color
+    Args:
+        col1 (3-tuple): The RGB color at the start of the colormap
+        col2 (3-tuple): The RGB color at the end of the colormap
+        N (int): The number of colors to interpolate between col1 and col2
     
-    N : int
-        The number of values to interpolate
-        
-    Returns
-    -------
-    col_list : list of tuples
-        An ordered list of colors for the colormap
-    
+    Returns:
+        col_list (list): A list of RGB colors interpolated between col1 and col2
     """
-    
     col1 = np.array([item/255. for item in col1])
     col2 = np.array([item/255. for item in col2])
     
@@ -1004,27 +1040,16 @@ def make_linear_cmap(color_list, name="CustomColormap", alpha=None):
 
 
 def coords_to_image(x, y, z, **kwargs):
-    """Given a list of x, y, z values, interpolate onto 
-    a regular grid for plotting as an image
+    """Given a list of x, y, z values, interpolate onto a regular grid for plotting as 
+    an image. This function is based on Mathematica's ListDensityPlot
     
-    Parameters
-    ----------
-    x, y, z : N x 1
-        Lists of data coordinates
+    Args:
+        x, y, z (np.ndarray): The x, y, z values to interpolate, all of shape (N,)
+        **kwargs: Additional keyword arguments to pass to scipy.interpolate.griddata, 
+            such as the interpolation order and filling rules
     
-    kwargs : int
-        Parameters passed to scipy.interpolate.griddata,
-        such as the interpolation order and filling rules
-        
-    Returns
-    -------
-    pp_im : D1 x D2 ndarray
-        An image created from the 2D coordinates
-    
-    Notes
-    -----
-    
-    Based on Mathematica's ListDensityPlot
+    Returns:
+        pp_im (np.ndarray): The image of the interpolated values, of shape (D1, D2)
     """
     x_sorted = np.sort(x)
     y_sorted = np.sort(y)
@@ -1056,7 +1081,11 @@ def coords_to_image(x, y, z, **kwargs):
 
 
 def vanish_axes(gca=None):
-    """Make all axes disappear from a plot"""
+    """Make all axes disappear from a plot
+    
+    Args:
+        gca (matplotlib.axes.Axes): The axes to remove. If None, use the current axes.
+    """
     if not gca:
         gca = plt.gca()
     gca.set_axis_off()
