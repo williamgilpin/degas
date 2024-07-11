@@ -1,6 +1,6 @@
 ## degas
 
-A minimal collection of plotting utilities and helper functions for matplotlib.
+A collection of plotting utilities and helper functions for matplotlib.
 
 ## Installation and requirements
 

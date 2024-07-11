@@ -59,6 +59,7 @@ pastel_rainbow_alt = pastel_rainbow[[0, 5, 3, 1, 7, 4, 2, 8, 6, 9, 10, 11]]
 
 # degas line plot colors
 royal_purple = np.array((120, 81, 169))/255.
+cornflower_blue = np.array([77, 170, 232])/255.
 
 style_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "styles")
 def set_style(style_name="default"):
@@ -108,8 +109,8 @@ def fixed_aspect_ratio(ratio, ax=None,
     if semilogx:
         xrange = np.log10(xvals[1]) - np.log10(xvals[0])
     try:
-        ax.set_aspect(ratio*(xrange/yrange), adjustable='box')
-    except NotImplementedError:
+        ax.set_aspect(ratio * (xrange / yrange), adjustable='box')
+    except (NotImplementedError, ValueError):
         warnings.warn("Setting aspect ratio is experimental for 3D plots.")
         plt.gca().set_box_aspect((1, 1, ratio*(xrange/yrange)))
         #ax.set_box_aspect((ratio*(xrange/yrange), 1, 1))
@@ -399,7 +400,7 @@ def plot_cross(all_pairs,
     return ax
 
 
-def scatter_lines(x, y, s=None, c=None, **kwargs):
+def scatter_lines(x, y, s=None, c=None, linewidth2=1/10, **kwargs):
     """
     Scatter plot with lines connecting the points. The line segments will match
     the color of the point they start at, and their width will match the size
@@ -423,12 +424,13 @@ def scatter_lines(x, y, s=None, c=None, **kwargs):
 
     ## Loop to draw lines connecting all points
     for i in range(len(x) - 1):
-        plt.plot(x[i:i+2], y[i:i+2], color=colors[i], linewidth=np.sqrt(sizes[i])/10)
+        plt.plot(x[i:i+2], y[i:i+2], color=colors[i], linewidth=linewidth2)
 
     return scatter
 
 
-def plot_err(y, 
+def plot_err(
+    y, 
     errs, 
     x=[], 
     color=(0,0,0), 
@@ -1087,9 +1089,10 @@ def savefig_exact(arr, file_name, target_shape=None, dpi=400, **kwargs):
     ax.set_axis_off()
     fig.add_axes(ax)
     ax.imshow(arr, **kwargs)
-    plt.savefig(f_name, dpi=(dpi ))
+    plt.savefig(file_name, dpi=(dpi ))
 
 
+from datetime import datetime
 
 def better_savefig(
         name, 
@@ -1098,6 +1101,7 @@ def better_savefig(
         pad_inches=0.02, 
         remove_border=False, 
         dryrun=False,
+        unique_tag=False,
         **kwargs
     ):
     """This function is for saving images without a bounding box and at the proper resolution
@@ -1110,6 +1114,7 @@ def better_savefig(
         dpi (int): The desired dots per linear inch
         pad (float): Add a tiny amount of whitespace if necessary
         remove_border (bool): Whether to remove axes and padding (e.g. for images)
+        unique_tag (bool): Tag a unique date and time to the file name
         dryrun (bool): If True, don't actually save the file
         **kwargs: passed on to matplotlib's built-in "savefig" function
 
@@ -1122,8 +1127,12 @@ def better_savefig(
         plt.gca().xaxis.set_major_locator(plt.NullLocator())
         plt.gca().yaxis.set_major_locator(plt.NullLocator())
 
+    ## Append a unique datetime tag to the file name
+    if unique_tag:
+        name = name + "_" + datetime.now().strftime("%Y%m%d_%H%M%S")
+
     if not dryrun:
-        plt.savefig(name, bbox_inches='tight', pad_inches=pad_inches, dpi=dpi)
+        plt.savefig(name, bbox_inches='tight', pad_inches=pad_inches, dpi=dpi, **kwargs)
 
 # Blue-Black-Red colormap
 blbkrd = make_linear_cmap([blue, 'k', red])
