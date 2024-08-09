@@ -10,12 +10,6 @@ try:
 except ImportError:
     has_scipy = False
 
-
-## TODO
-## Easy split y axis function
-
-
-
 #############################################################
 #
 #
@@ -454,10 +448,11 @@ def plot_err(
     errs, 
     x=[], 
     color=(0,0,0), 
-    alpha=.4, 
-    linewidth=1, 
     loglog=False,
-    **kwargs):
+    lightness=0.33/.5,
+    ax=None,
+    fill_kwargs={},
+    **plot_kwargs):
     """
     Plot a curve with error bars
 
@@ -466,8 +461,10 @@ def plot_err(
         errs (array): A list of errors, or a pair of lists of upper and lower errors 
         x (array): A list of x positions
         color (3-tuple): The color of the plot lines and error bars
-        alpha (float): The transparency level of the error bars
-        kwargs: passed to plot
+        loglog (bool): Whether to plot the x and y axes in log scale
+        lightness (float): The visual lightness of the error bars
+        fill_kwargs (dict): keyword arguments passed to the region filling plot
+        plot_kwargs: passed to the line plot
 
     Returns:
         ax (matplotlib.axes.Axes): The axes on which the plot was drawn
@@ -479,6 +476,8 @@ def plot_err(
         plot_err(y, errs, x=x, color=(0,0,1))
 
     """
+    if ax is None:
+        ax = plt.gca()
     if len(x) < 1:
         x = np.arange(len(y))
     
@@ -490,13 +489,33 @@ def plot_err(
         err_hi = errs
         
     trace_lo, trace_hi = y - err_lo, y + err_hi
+
     
-    plt.fill_between(x, trace_lo, trace_hi, color=lighter(color), alpha=alpha)
-    plt.plot(x, y, color=color, linewidth=linewidth, **kwargs)
+    ## Set default colors and other plot properties
+    all_fill_kwargs = dict(
+        color=lighter(color, lightness),
+    )
+    
+    all_plot_kwargs = dict(
+        color=color,
+    )
+    
+    all_plot_kwargs.update(plot_kwargs) # update to user-specified plot_kwargs
+    lineplot = ax.plot(x, y, **all_plot_kwargs)
+    # print(dir(lineplot))
+    z = lineplot[0].get_zorder()
+
+    all_fill_kwargs["zorder"] = z - 1
+    all_fill_kwargs.update(fill_kwargs) # update to user-specified fill_kwargs
+    fillplot = ax.fill_between(x, trace_lo, trace_hi, **all_fill_kwargs)
+    print(fillplot.get_zorder())
+    # ax.plot(x, y, **all_plot_kwargs)
+
     if loglog:
-        plt.yscale('log', nonposy='clip')
-        plt.xscale('log', nonposy='clip')
-    # return ax
+        ax.yscale('log', nonposy='clip')
+        ax.xscale('log', nonposy='clip')
+    
+    return ax
 
 def plot3dproj(x, y, z, *args, 
     ax=None,
@@ -508,8 +527,7 @@ def plot3dproj(x, y, z, *args,
     aspect_ratio=1.0,
     **kwargs):
     """
-    Create a three dimensional plot, with projections onto the 2D coordinate
-    planes
+    Create a three dimensional plot, with projections onto the 2D coordinate planes
     
     Parameters
     ----------
@@ -535,7 +553,7 @@ def plot3dproj(x, y, z, *args,
         aspect ratio is used
     """
     if ax is None:
-        fig = plt.figure(figsize=(7,7))
+        fig = plt.figure(figsize=(7, 7))
         ax = fig.add_subplot(111, projection= '3d')
     if color_proj is None:
         color_proj = lighter(color, .6)
@@ -1218,3 +1236,35 @@ def sliderplot(arr, figsize=(6, 6), width='100%', **kwargs):
             min=0, max=n-1, step=1, value=0, layout=Layout(width=width)
         )
     )
+
+#############################################################
+#
+#
+#   Image analysis
+#
+#
+############################################################
+
+
+
+def crop_by_value(image, target=1.0):
+    """
+    Crops an image to only include the columns where the pixel value is 1.0.
+    
+    Args:
+        image (numpy.ndarray): The input image to be cropped.
+
+    Returns:
+        numpy.ndarray: The cropped image.
+    """
+    # Find columns where all pixel values are 1.0
+    mask = np.logical_not(np.all(image == target, axis=0))
+    
+    # Find the indices of the first and last columns that satisfy the condition
+    leftmost = np.argmax(mask)
+    rightmost = len(mask) - np.argmax(mask[::-1]) - 1
+    
+    # Crop the image based on these indices
+    cropped_image = image[:, leftmost:rightmost+1]
+    
+    return cropped_image
