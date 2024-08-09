@@ -502,15 +502,11 @@ def plot_err(
     
     all_plot_kwargs.update(plot_kwargs) # update to user-specified plot_kwargs
     lineplot = ax.plot(x, y, **all_plot_kwargs)
-    # print(dir(lineplot))
     z = lineplot[0].get_zorder()
 
     all_fill_kwargs["zorder"] = z - 1
     all_fill_kwargs.update(fill_kwargs) # update to user-specified fill_kwargs
     fillplot = ax.fill_between(x, trace_lo, trace_hi, **all_fill_kwargs)
-    print(fillplot.get_zorder())
-    # ax.plot(x, y, **all_plot_kwargs)
-
     if loglog:
         ax.yscale('log', nonposy='clip')
         ax.xscale('log', nonposy='clip')
