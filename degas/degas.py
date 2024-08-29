@@ -736,6 +736,33 @@ def plot_segments(coords, mask, ax=None, **kwargs):
 
     return ax
 
+
+def scientific_ticks(ax=None, axis='y', **kwargs):
+    """
+    Set scientific notation on the axis.
+
+    Args:
+        ax (matplotlib.axis): axis to set the ticks on
+        axis (str): 'x' or 'y'
+        **kwargs: keyword arguments to pass to set_tick 
+    
+    """
+    if ax is None:
+        ax = plt.gca()
+    
+    if axis == 'x':
+        ax.set_xticklabels(
+            [f"$10^{{{int(y)}}}$" for y in plt.gca().get_xticks()], 
+            **kwargs
+        )
+    elif axis == 'y':
+        ax.set_yticklabels(
+            [f"$10^{{{int(y)}}}$" for y in plt.gca().get_yticks()], 
+            **kwargs
+        )
+    else:
+        raise ValueError("axis must be 'x' or 'y'")
+
 def dim_axes(ax=None, alpha=0.5):
     """
     Fade all ticks and frames on a plot. 
