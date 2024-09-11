@@ -52,8 +52,10 @@ pastel_rainbow = np.array([
 pastel_rainbow_alt = pastel_rainbow[[0, 5, 3, 1, 7, 4, 2, 8, 6, 9, 10, 11]]
 
 # degas line plot colors
-royal_purple = np.array((120, 81, 169))/255.
-cornflower_blue = np.array([77, 170, 232])/255.
+royal_purple = np.array((120, 81, 169)) / 255.
+cornflower_blue = np.array([77, 170, 232]) / 255.
+mblue = "#00B4E7"
+mred = "#FF0000"
 
 style_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "styles")
 def set_style(style_name="default"):
