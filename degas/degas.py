@@ -232,6 +232,36 @@ def fixed_aspect_ratio(ratio, ax=None, log=False, semilogy=False, semilogx=False
         
 #     return(im)
 
+def scatter_image(data, default=np.nan):
+    """
+    Create an image from scattered data by mapping x, y, z values to pixel indices.
+
+    Args:
+        data (array-like): 3xN array of x, y, z values.
+        default (float): Default value for empty pixels.
+
+    Returns:
+        img (ndarray): Image with mapped data.
+    """
+    x, y, z = data
+    x_min, x_max = x.min(), x.max()
+    y_min, y_max = y.min(), y.max()
+
+    # Determine grid resolutions for x and y
+    unique_x = np.unique(x)
+    unique_y = np.unique(y)
+    dx = np.min(np.diff(np.sort(unique_x))) if unique_x.size > 1 else 1
+    dy = np.min(np.diff(np.sort(unique_y))) if unique_y.size > 1 else 1
+    N_x = int(np.ceil((x_max - x_min) / dx))# + 1
+    N_y = int(np.ceil((y_max - y_min) / dy))# + 1
+
+    img = np.full((N_y, N_x), default, dtype=z.dtype)
+    ix = np.round((x - x_min) / dx).astype(int)
+    iy = np.round((y - y_min) / dy).astype(int)
+    valid = (ix >= 0) & (ix < N_x) & (iy >= 0) & (iy < N_y)
+    img[iy[valid], ix[valid]] = z[valid]
+
+    return img
 
 def make_snapshot_grid(data_list, nx=10, ny=10):
     """
@@ -566,6 +596,7 @@ def plot3dproj(x, y, z, *args,
     ax.plot(x, z, *args, zdir='y', zs=sdist_y*np.max(y), color=color_proj, **kwargs)
     ax.plot(y, z, *args, zdir='x', zs=sdist_x*np.min(x), color=color_proj, **kwargs)
     ax.plot(x, y, *args, zdir='z', zs=sdist_z*np.min(z), color=color_proj, **kwargs)
+
     ax.plot(x, y, z, *args, color=color, **kwargs)
 
     ax.view_init(elev=elev_azim[0], azim=elev_azim[1])
@@ -1165,7 +1196,7 @@ def savefig_exact(arr, file_name, target_shape=None, dpi=400, **kwargs):
 
 
 from datetime import datetime
-
+import os
 def better_savefig(
         name, 
         dpi=300, 
@@ -1199,9 +1230,12 @@ def better_savefig(
         plt.gca().xaxis.set_major_locator(plt.NullLocator())
         plt.gca().yaxis.set_major_locator(plt.NullLocator())
 
-    ## Append a unique datetime tag to the file name
+    # Split name into name and extenstion
+    fname, fext = os.path.splitext(name)
     if unique_tag:
-        name = name + "_" + datetime.now().strftime("%Y%m%d_%H%M%S")
+        fname = fname + "_" + datetime.now().strftime("%Y%m%d_%H%M%S")
+    name = fname + fext
+
 
     if not dryrun:
         plt.savefig(name, bbox_inches='tight', pad_inches=pad_inches, dpi=dpi, **kwargs)
