@@ -57,6 +57,49 @@ cornflower_blue = np.array([77, 170, 232]) / 255.
 mblue = "#00B4E7"
 mred = "#FF0000"
 
+# from matplotlib.colors import LinearSegmentedColormap
+# aegean = HexCode("aegean", "#5088C5")
+# space = HexCode("space", "#282A49")
+# lime = HexCode("lime", "#97CD78")
+# butter = HexCode("butter", "#FFFDBD")
+# viridis = LinearSegmentedColormap(
+#     "viridis",
+#     [(0, "space"), (0.468, "aegean"), (0.746, "lime"), (1, "butter")],
+# )
+
+
+# from matplotlib.colors import to_rgb
+# def hex_to_rgb01(hex_list):
+#     """Return Nx3 float RGB array in [0,1] from hex strings."""
+#     return np.array([to_rgb(h) for h in hex_list], dtype=float)
+
+
+## Arcadia Sciences color scheme
+from matplotlib.colors import LinearSegmentedColormap
+def make_cmap(hex_list, positions=None, name="custom", N=256):
+    """
+    Args:
+        hex_list (sequence[str]): Hex colors like ["#002", "#c33", ...].
+        positions (sequence[float] | None): Monotonic positions in [0,1] where
+            each hex should be exact. If None, colors are spaced evenly.
+        name (str): Colormap name.
+        N (int): Colormap resolution.
+
+    Returns:
+        (LinearSegmentedColormap): Matplotlib colormap.
+    """
+    if positions is None:
+        return LinearSegmentedColormap.from_list(name, list(hex_list), N=N)
+    return LinearSegmentedColormap.from_list(name, list(zip(positions, hex_list)), N=N)
+indigo_arcadia = "#5088C5"
+blue_arcadia = "#282A49"
+green_arcadia = "#97CD78"
+yellow_arcadia = "#FFFDBD"
+hexes = [indigo_arcadia, blue_arcadia, green_arcadia, yellow_arcadia]
+stops = [0.00, 0.468, 0.746, 1.00]
+viridis_arcadia = make_cmap(hexes, stops)
+
+
 style_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "styles")
 def set_style(style_name="default"):
     """
@@ -618,43 +661,6 @@ def plot3dproj(x, y, z, *args,
 
     return ax
 
-# def plot_err(y, errs, 
-#     color=(0,0,0), 
-#     x=[], 
-#     alpha=.4, 
-#     linewidth=1, 
-#     ax=None,
-#     **kwargs):
-#     """
-#     Plot a curve with error bars
-
-#     Args:
-#         y (array): A list of values
-#         errs (array): A list of errors, or a pair of lists of upper and lower errors
-#         x (array): A list of x positions
-#         color (3-tuple): The color of the plot lines and error bars
-#         alpha (float): The transparency level of the error bars
-#         kwargs: passed to plot
-
-#     """
-#     if not ax:
-#         ax = plt.gca()
-#     if len(x)<1:
-#         x = np.arange(len(y))
-    
-#     if len(errs.shape)>1:
-#         if errs.shape[1]==2:
-#             err_lo, err_hi = errs[:, 0], errs[:, 1]
-#     else:
-#         err_lo = errs
-#         err_hi = errs
-        
-#     trace_lo, trace_hi = y - err_lo, y + err_hi
-    
-#     plt.fill_between(x, trace_lo, trace_hi, color=lighter(color), alpha=alpha)
-#     plt.plot(x, y, color=color, linewidth=linewidth, **kwargs)
-
-#     return ax
 
 def plot_linear_confidence(
     x, y, ax=None, show_ci=True, show_pi=True, 
@@ -1204,6 +1210,7 @@ def better_savefig(
         pad_inches=0.02, 
         remove_border=False, 
         dryrun=False,
+        file_format=None,
         unique_tag=False,
         **kwargs
     ):
@@ -1217,6 +1224,8 @@ def better_savefig(
         dpi (int): The desired dots per linear inch
         pad (float): Add a tiny amount of whitespace if necessary
         remove_border (bool): Whether to remove axes and padding (e.g. for images)
+        file_format (str or None): The file format to save the figure as. If a format is 
+            specified in the name, this will override it.
         unique_tag (bool): Tag a unique date and time to the file name
         dryrun (bool): If True, don't actually save the file
         **kwargs: passed on to matplotlib's built-in "savefig" function
