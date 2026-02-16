@@ -661,18 +661,22 @@ def plot3dproj(x, y, z, *args,
 
     return ax
 
-
 def plot_linear_confidence(
-    x, y, ax=None, show_ci=True, show_pi=True, 
+    x, y, ax=None, show_ci=True, show_pi=True,
     ci_range=0.95,
-    return_model=False, 
+    return_model=False,
     extend_fraction=0.0,
-    ci_kwargs={}, 
-    pi_kwargs={}, 
+    ci_kwargs={},
+    pi_kwargs={},
+    logx=None,
+    logy=None,
+    log_base=10.0,
     **kwargs
-    ):
+):
     """
     Plot a linear regression with confidence interval and prediction interval.
+    If either axis is logarithmic, the fit is performed in the corresponding
+    transformed (log) space so the plotted line is straight on the transformed axes.
 
     Args:
         x (array-like): x values
@@ -680,75 +684,199 @@ def plot_linear_confidence(
         ax (matplotlib.axes.Axes): axes to plot on
         show_ci (bool): plot confidence interval
         show_pi (bool): plot prediction interval
-        ci_range (float): range of confidence interval
+        ci_range (float): range of confidence interval (e.g., 0.95)
         return_model (bool): return model parameters
-        extend_fraction (float): extend confidence/prediction interval by this amount
-            outside of the data range
-        ci_kwargs (dict): passed to plt.fill_between for confidence interval
-        pi_kwargs (dict): passed to plt.fill_between for prediction interval
-        kwargs: passed to plt.plot
+        extend_fraction (float): extend intervals by this fraction outside data range
+        ci_kwargs (dict): passed to ax.fill_between for confidence interval
+        pi_kwargs (dict): passed to ax.fill_between for prediction interval
+        logx (bool or None): if True/False, force log-x behavior; if None, read from ax
+        logy (bool or None): if True/False, force log-y behavior; if None, read from ax
+        log_base (float): base used for log transform/inverse (default 10)
+        kwargs: passed to ax.plot
 
     Returns:
-        matplotlib.axes.Axes: axes with plot
+        matplotlib.axes.Axes or (Axes, slope, intercept, r2, mse)
     """
     if ax is None:
         ax = plt.gca()
+
+    # infer log flags from axes if not provided
+    if logx is None:
+        logx = hasattr(ax, "get_xscale") and (ax.get_xscale() == "log")
+    if logy is None:
+        logy = hasattr(ax, "get_yscale") and (ax.get_yscale() == "log")
+
     x, y = np.asarray(x), np.asarray(y)
     n, m = len(x), 2
 
-    ci_kwargs0 = {"color" : "gray", "alpha" : 0.2}
-    pi_kwargs0 = {"color" : "gray", "alpha" : 0.1}
+    ci_kwargs0 = {"color": "gray", "alpha": 0.2}
+    pi_kwargs0 = {"color": "gray", "alpha": 0.1}
     ci_kwargs0.update(ci_kwargs)
     pi_kwargs0.update(pi_kwargs)
     ci_kwargs, pi_kwargs = ci_kwargs0, pi_kwargs0
 
-    slope, intercept = np.polyfit(x, y, 1)
-    y_model = np.polyval([slope, intercept], x)
-    x_mean, y_mean = np.mean(x), np.mean(y)
-    
-    t = scipy.stats.t.ppf(ci_range, n - m) # Students statistic of interval confidence
-    std_error = np.std(y - y_model) / np.sqrt(n / (n - m)) # correct for dof
-    r2 = 1 - np.sum((y - y_model)**2) / np.sum((y - y_mean)**2)
-    mse = 1/n * np.sum( (y - y_model)**2 )
+    # transforms
+    ln_base = np.log(log_base)
 
+    def _log(z):
+        return np.log(z) / ln_base
+
+    def _exp(z):
+        return np.exp(z * ln_base)
+
+    if logx and np.any(x <= 0):
+        raise ValueError("logx=True requires all x > 0.")
+    if logy and np.any(y <= 0):
+        raise ValueError("logy=True requires all y > 0.")
+
+    x_t = _log(x) if logx else x
+    y_t = _log(y) if logy else y
+
+    # fit in transformed space
+    slope, intercept = np.polyfit(x_t, y_t, 1)
+    y_model_t = np.polyval([slope, intercept], x_t)
+    x_mean_t, y_mean_t = np.mean(x_t), np.mean(y_t)
+
+    t = scipy.stats.t.ppf(ci_range, n - m)
+    std_error_t = np.std(y_t - y_model_t) / np.sqrt(n / (n - m))
+    r2 = 1 - np.sum((y_t - y_model_t) ** 2) / np.sum((y_t - y_mean_t) ** 2)
+    mse = (1 / n) * np.sum((y_t - y_model_t) ** 2)
+
+    # x-range for line/intervals (in transformed space)
     x_min, x_max = np.min(x), np.max(x)
-    if np.sign(x_min) == np.sign(x_max) and np.sign(x_max) > 0:
-        x_line = np.linspace(
-            np.min(x) * (1 - extend_fraction), 
-            np.max(x) * (1 + extend_fraction), 
-            100
-        )
-    elif np.sign(x_min) == np.sign(x_max) and np.sign(x_max) < 0:
-        x_line = np.linspace(
-            np.min(x) * (1 + extend_fraction), 
-            np.max(x) * (1 - extend_fraction), 
-            100
-        )
+    if logx:
+        # multiplicative extension in data space, then transform
+        x_min_ext = x_min * (1 - extend_fraction)
+        x_max_ext = x_max * (1 + extend_fraction)
+        if x_min_ext <= 0:
+            x_min_ext = x_min  # keep valid; user asked for fraction, not hard guarantees
+        x_line_t = np.linspace(_log(x_min_ext), _log(x_max_ext), 100)
+        x_line = _exp(x_line_t)
     else:
-        x_line = np.linspace(
-            np.min(x) * (1 + extend_fraction), 
-            np.max(x) * (1 + extend_fraction), 
-            100
-        )
-    print("----\n", flush=True)
-    y_line = intercept + x_line * slope
+        # preserve original sign-aware behavior
+        if np.sign(x_min) == np.sign(x_max) and np.sign(x_max) > 0:
+            x_line = np.linspace(x_min * (1 - extend_fraction), x_max * (1 + extend_fraction), 100)
+        elif np.sign(x_min) == np.sign(x_max) and np.sign(x_max) < 0:
+            x_line = np.linspace(x_min * (1 + extend_fraction), x_max * (1 - extend_fraction), 100)
+        else:
+            x_line = np.linspace(x_min * (1 + extend_fraction), x_max * (1 + extend_fraction), 100)
+        x_line_t = x_line
 
-    # confidence interval
-    ci = t * std_error * (1/n + (x_line - x_mean)**2 / np.sum((x - x_mean)**2))**.5
-    # prediction interval
-    pi = t * std_error * (1 + 1/n + (x_line - x_mean)**2 / np.sum((x - x_mean)**2))**.5  
+    y_line_t = intercept + slope * x_line_t
 
-    # plotting
+    # intervals (computed in transformed space)
+    sxx = np.sum((x_t - x_mean_t) ** 2)
+    ci_t = t * std_error_t * (1 / n + (x_line_t - x_mean_t) ** 2 / sxx) ** 0.5
+    pi_t = t * std_error_t * (1 + 1 / n + (x_line_t - x_mean_t) ** 2 / sxx) ** 0.5
+
+    # inverse transform for plotting
+    if logy:
+        y_line = _exp(y_line_t)
+        y_ci_lo, y_ci_hi = _exp(y_line_t - ci_t), _exp(y_line_t + ci_t)
+        y_pi_lo, y_pi_hi = _exp(y_line_t - pi_t), _exp(y_line_t + pi_t)
+    else:
+        y_line = y_line_t
+        y_ci_lo, y_ci_hi = y_line_t - ci_t, y_line_t + ci_t
+        y_pi_lo, y_pi_hi = y_line_t - pi_t, y_line_t + pi_t
+
     ax.plot(x_line, y_line, **kwargs)
     if show_ci:
-        ax.fill_between(x_line, y_line - ci, y_line + ci, **ci_kwargs)
+        ax.fill_between(x_line, y_ci_lo, y_ci_hi, **ci_kwargs)
     if show_pi:
-        ax.fill_between(x_line, y_line - pi, y_line + pi, **pi_kwargs)
-        
+        ax.fill_between(x_line, y_pi_lo, y_pi_hi, **pi_kwargs)
+
     if not return_model:
         return ax
-    else:
-        return ax, slope, intercept, r2, mse
+    return ax, slope, intercept, r2, mse
+
+
+# def plot_linear_confidence(
+#     x, y, ax=None, show_ci=True, show_pi=True, 
+#     ci_range=0.95,
+#     return_model=False, 
+#     extend_fraction=0.0,
+#     ci_kwargs={}, 
+#     pi_kwargs={}, 
+#     **kwargs
+#     ):
+#     """
+#     Plot a linear regression with confidence interval and prediction interval.
+
+#     Args:
+#         x (array-like): x values
+#         y (array-like): y values
+#         ax (matplotlib.axes.Axes): axes to plot on
+#         show_ci (bool): plot confidence interval
+#         show_pi (bool): plot prediction interval
+#         ci_range (float): range of confidence interval
+#         return_model (bool): return model parameters
+#         extend_fraction (float): extend confidence/prediction interval by this amount
+#             outside of the data range
+#         ci_kwargs (dict): passed to plt.fill_between for confidence interval
+#         pi_kwargs (dict): passed to plt.fill_between for prediction interval
+#         kwargs: passed to plt.plot
+
+#     Returns:
+#         matplotlib.axes.Axes: axes with plot
+#     """
+#     if ax is None:
+#         ax = plt.gca()
+#     x, y = np.asarray(x), np.asarray(y)
+#     n, m = len(x), 2
+
+#     ci_kwargs0 = {"color" : "gray", "alpha" : 0.2}
+#     pi_kwargs0 = {"color" : "gray", "alpha" : 0.1}
+#     ci_kwargs0.update(ci_kwargs)
+#     pi_kwargs0.update(pi_kwargs)
+#     ci_kwargs, pi_kwargs = ci_kwargs0, pi_kwargs0
+
+#     slope, intercept = np.polyfit(x, y, 1)
+#     y_model = np.polyval([slope, intercept], x)
+#     x_mean, y_mean = np.mean(x), np.mean(y)
+    
+#     t = scipy.stats.t.ppf(ci_range, n - m) # Students statistic of interval confidence
+#     std_error = np.std(y - y_model) / np.sqrt(n / (n - m)) # correct for dof
+#     r2 = 1 - np.sum((y - y_model)**2) / np.sum((y - y_mean)**2)
+#     mse = 1/n * np.sum( (y - y_model)**2 )
+
+#     x_min, x_max = np.min(x), np.max(x)
+#     if np.sign(x_min) == np.sign(x_max) and np.sign(x_max) > 0:
+#         x_line = np.linspace(
+#             np.min(x) * (1 - extend_fraction), 
+#             np.max(x) * (1 + extend_fraction), 
+#             100
+#         )
+#     elif np.sign(x_min) == np.sign(x_max) and np.sign(x_max) < 0:
+#         x_line = np.linspace(
+#             np.min(x) * (1 + extend_fraction), 
+#             np.max(x) * (1 - extend_fraction), 
+#             100
+#         )
+#     else:
+#         x_line = np.linspace(
+#             np.min(x) * (1 + extend_fraction), 
+#             np.max(x) * (1 + extend_fraction), 
+#             100
+#         )
+#     print("----\n", flush=True)
+#     y_line = intercept + x_line * slope
+
+#     # confidence interval
+#     ci = t * std_error * (1/n + (x_line - x_mean)**2 / np.sum((x - x_mean)**2))**.5
+#     # prediction interval
+#     pi = t * std_error * (1 + 1/n + (x_line - x_mean)**2 / np.sum((x - x_mean)**2))**.5  
+
+#     # plotting
+#     ax.plot(x_line, y_line, **kwargs)
+#     if show_ci:
+#         ax.fill_between(x_line, y_line - ci, y_line + ci, **ci_kwargs)
+#     if show_pi:
+#         ax.fill_between(x_line, y_line - pi, y_line + pi, **pi_kwargs)
+        
+#     if not return_model:
+#         return ax
+#     else:
+#         return ax, slope, intercept, r2, mse
 
 def plot_segments(coords, mask, ax=None, **kwargs):
     """
