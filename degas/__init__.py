@@ -1,4 +1,6 @@
-import pkg_resources
+from importlib.resources import files
+
 from .degas import *
 
-data_path = pkg_resources.resource_filename('degas', 'degas/styles/*.mplstyle')
+# Path to the styles directory (Python 3.9+)
+data_path = str(files(__package__) / "styles")

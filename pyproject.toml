@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "degas"
+version = "0.1.0"
+description = "A collection of plotting utilities and helper functions for matplotlib."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "numpy",
+    "matplotlib",
+]
+
+[project.urls]
+Repository = "https://github.com/williamgilpin/degas"
+
+[tool.setuptools.packages.find]
+include = ["degas*"]
+
+[tool.setuptools.package-data]
+degas = ["styles/*"]
