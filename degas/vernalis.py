@@ -1,4 +1,4 @@
-# The vernalist colormap designed by Michael Waskom
+# The vernalis colormap designed by Michael Waskom
 # https://gist.github.com/mwaskom/9f4c519e185637a4d0a7dd7bd900207e
 
 from matplotlib.colors import ListedColormap
