@@ -4,12 +4,6 @@
 from matplotlib.colors import ListedColormap
 from numpy import nan, inf
 
-# Used to reconstruct the colormap in viscm
-parameters = {'xp': [3.559581561226338, 17.887066941343306, -44.539833643452027, -35.329307327662548, -2.5807693159666485],
-              'yp': [-7.9678362573099264, -64.766081871344994, -32.529239766081844, 43.201754385964932, 6.359649122807042],
-              'min_Jp': 2.08370436331,
-              'max_Jp': 99.3232413179}
-
 cm_data = [[ 0.00679389, 0.00239967, 0.01842103],
            [ 0.00888806, 0.00351125, 0.02354065],
            [ 0.01123663, 0.00478832, 0.02933639],
@@ -268,17 +262,11 @@ cm_data = [[ 0.00679389, 0.00239967, 0.01842103],
            [ 0.98846142, 0.9976655 , 0.92955893]]
 
 cmap_vn = ListedColormap(cm_data, name=__file__)
-
+cmap_vn_r = cmap_vn.reversed(name="vernalis_r")
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
     import numpy as np
-
-    try:
-        from viscm import viscm
-        viscm(test_cm)
-    except ImportError:
-        print("viscm not found, falling back on simple display")
-        plt.imshow(np.linspace(0, 100, 256)[None, :], aspect='auto',
-                   cmap=cmap_vn)
+    plt.imshow(np.linspace(0, 100, 256)[None, :], aspect='auto',
+                cmap=cmap_vn)
     plt.show()
