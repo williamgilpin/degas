@@ -1464,3 +1464,89 @@ def crop_by_value(image, target=1.0):
     cropped_image = image[:, leftmost:rightmost+1]
     
     return cropped_image
+
+
+
+
+
+def save_matrix_pixels(A, filename="matrix.png", **kwargs):
+    """
+    Save a matrix as an image with exactly one output pixel per matrix element.
+
+    Args:
+        A (array-like): Matrix with shape (M, M) or (N, M).
+        filename (str, optional): Output image filename.
+        **kwargs: Additional arguments to pass to plt.imshow
+
+    Returns:
+        None
+    """
+    h, w = A.shape
+
+    fig = plt.figure(figsize=(w, h), dpi=1, frameon=False)
+    ax = fig.add_axes([0, 0, 1, 1])
+    ax.imshow(A, origin="lower", interpolation="nearest", aspect="auto", **kwargs)
+    ax.set_axis_off()
+    fig.savefig(filename, dpi=1, bbox_inches=None, pad_inches=0)
+    plt.close(fig)
+
+from scipy.interpolate import griddata
+def xyz_to_image(x, y, z, method="linear", fill_value=np.nan):
+    """
+    Convert scattered x, y, z samples into an image matrix for imshow.
+
+    Args:
+        x (array_like): x coordinates.
+        y (array_like): y coordinates.
+        z (array_like): z values.
+        method (str, optional): Interpolation method. Options are
+            "nan", "nearest", "zero", "linear", and "cubic". "zero" is
+            equivalent to 0th-order nearest-neighbor interpolation.
+        fill_value (float, optional): Value used outside the convex hull for
+            "linear" and "cubic" interpolation.
+
+    Returns:
+        (tuple): A tuple ``(img, extent, xi, yi)``, where ``img`` is the
+        2D image matrix, ``extent`` is suitable for ``imshow(..., extent=extent)``,
+        and ``xi``, ``yi`` are the grid coordinates.
+    """
+    x = np.asarray(x)
+    y = np.asarray(y)
+    z = np.asarray(z)
+
+    dx = np.min(np.diff(np.unique(np.sort(x))))
+    dy = np.min(np.diff(np.unique(np.sort(y))))
+
+    xi = np.arange(x.min(), x.max() + 0.5 * dx, dx)
+    yi = np.arange(y.min(), y.max() + 0.5 * dy, dy)
+
+    X, Y = np.meshgrid(xi, yi)
+
+    img = np.full(X.shape, np.nan, dtype=float)
+
+    x_idx = np.rint((x - xi[0]) / dx).astype(int)
+    y_idx = np.rint((y - yi[0]) / dy).astype(int)
+    img[y_idx, x_idx] = z
+
+    if method == "nan":
+        pass
+    elif method in {"nearest", "zero"}:
+        missing = np.isnan(img)
+        img[missing] = griddata((x, y), z, (X[missing], Y[missing]), method="nearest")
+    elif method in {"linear", "cubic"}:
+        missing = np.isnan(img)
+        img[missing] = griddata(
+            (x, y),
+            z,
+            (X[missing], Y[missing]),
+            method=method,
+            fill_value=fill_value,
+        )
+    else:
+        raise ValueError(
+            "method must be one of {'nan', 'nearest', 'zero', 'linear', 'cubic'}"
+        )
+
+    extent = (xi[0] - dx / 2, xi[-1] + dx / 2, yi[0] - dy / 2, yi[-1] + dy / 2)
+
+    return img, extent, xi, yi
