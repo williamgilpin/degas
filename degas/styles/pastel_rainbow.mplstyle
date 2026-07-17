@@ -23,7 +23,8 @@ axes.grid: False
 # axes.labelsize: large
 # axes.labelcolor: FAFAFA
 # axes.axisbelow: True
-axes.prop_cycle: cycler("color", [[0.372549, 0.596078, 1], [1.0, .3882, .2784], [0.20784314, 0.67843137, 0.6], [0.59607843, 0.25882353, 0.89019608],[0.803922, 0.0627451, 0.462745], [0.917647, 0.682353, 0.105882],[0.7, 0.7, 0.7]])
+# degas pastel rainbow color scheme (degas.pastel_rainbow)
+axes.prop_cycle: cycler("color", ["DD3B35", "ED9D3F", "A5B485", "3F946D", "327A89", "2C73B2", "2B347C", "A4247C", "BAADD6", "A3DA85", "889F7A", "A8C0DD"])
 axes.xmargin : .01
 axes.ymargin: .01
 
@@ -61,6 +62,6 @@ figure.figsize : 2, 2
 # savefig.edgecolor: 101010
 
 image.interpolation: nearest
-image.cmap: gray
+image.cmap: vernalis
 image.origin : lower             ## lower | upper
 

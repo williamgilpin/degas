@@ -6,7 +6,7 @@ this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
 
 setup(name = 'degas',
-      packages=['degas'],
+      packages=['degas', 'degas.colormaps'],
       install_requires = ["numpy", "matplotlib"],
       # packages=find_packages(),
       package_dir={'degas': 'degas'},

@@ -1,1 +1,7 @@
-# pass
+# Matplotlib defaults, except for the degas colormap and color cycle.
+# The vernalis colormap is registered with matplotlib when degas is imported.
+
+image.cmap: vernalis
+
+# degas high contrast color scheme (degas.high_contrast)
+axes.prop_cycle: cycler("color", ["5F98FF", "FF6347", "35AD99", "9842E3", "CD1076", "EAAE1B", "B2B2B2"])

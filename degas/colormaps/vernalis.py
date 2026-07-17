@@ -261,7 +261,7 @@ cm_data = [[ 0.00679389, 0.00239967, 0.01842103],
            [ 0.98147524, 0.99344084, 0.92100475],
            [ 0.98846142, 0.9976655 , 0.92955893]]
 
-cmap_vn = ListedColormap(cm_data, name=__file__)
+cmap_vn = ListedColormap(cm_data, name="vernalis")
 cmap_vn_r = cmap_vn.reversed(name="vernalis_r")
 
 if __name__ == "__main__":
