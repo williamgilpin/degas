@@ -82,3 +82,7 @@ data = np.random.random((32, 32))
 plt.imshow(data, cmap=dg.vernalis)
 plt.imshow(data, cmap=dg.batlow_r)
 ```
+
+![The colormaps available in degas](assets/colormaps.png)
+
+The image above can be regenerated with `python assets/generate_colormap_figure.py`.
