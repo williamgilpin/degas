@@ -1408,6 +1408,23 @@ def plt_sphere(pts, radius, ax=None):
     
     return ax
 
+def save_colormap(cmap, filename, **kwargs):
+    """
+    Save a colormap as an image file.
+
+    Args:
+        cmap: The colormap to save (can be a string or a matplotlib colormap object).
+        filename: The name of the file to save the colormap to.
+        **kwargs: Additional keyword arguments to pass to plt.savefig().
+
+    """
+    plt.figure(figsize=(10, 0.5))
+    plt.imshow(np.linspace(0, 1, 256).reshape(1, -1), cmap=cmap, aspect='auto')
+    vanish_axes()
+    better_savefig(filename, **kwargs)
+    plt.close()
+
+
 
 from ipywidgets import interact, IntSlider, Layout
 def sliderplot(arr, figsize=(6, 6), width='100%', **kwargs):
@@ -1432,6 +1449,8 @@ def sliderplot(arr, figsize=(6, 6), width='100%', **kwargs):
             min=0, max=n-1, step=1, value=0, layout=Layout(width=width)
         )
     )
+
+
 
 #############################################################
 #
