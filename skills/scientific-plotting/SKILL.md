@@ -65,6 +65,7 @@ Importing `degas` registers all 41 colormaps (plus `_r` reversed variants) with 
 
 | Helper | Purpose | Key Usage Note |
 | :--- | :--- | :--- |
+| `dg.plot_bar(y, x=None, width=0.64, ax=ax)` | Bar chart with house bar proportions (`0.64` width, ~`0.36` gap) | Borderless flat fill, balanced `xmargin=0.04`, flush `y=0` baseline. If calling `ax.bar` directly, pass `width=dg.BAR_WIDTH` (`0.64`) and `ax.margins(x=0.04)`; for histograms pass `rwidth=0.64`. |
 | `dg.plot_err(y, errs, x=x, color=dg.blue)` | Line with shaded symmetric or asymmetric `(N, 2)` error band | `y` comes first; `color` must be an RGB 3-tuple in `[0, 1]` (not a hex string). |
 | `dg.plot_linear_confidence(x, y, ax=ax, return_model=True)` | Linear regression with 95% CI & PI bands (supports log axes) | Set `ax.set_xscale("log")` / `set_yscale("log")` *before* calling, or pass `logx`/`logy`. |
 | `dg.plot_splity(x, y1, y2, ax=ax, kwargs1=..., kwargs2=...)` | Dual y-axes with clean z-order layering | Pass distinct colors in `kwargs1`/`kwargs2` and match axis label colors. |

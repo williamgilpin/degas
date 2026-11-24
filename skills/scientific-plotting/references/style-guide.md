@@ -12,7 +12,7 @@ Access the directory at runtime via `degas.data_path` (or `degas.style_path`). A
 All house styles share:
 - **Font**: `font.family: sans-serif`, `font.sans-serif: Helvetica, Helvetica Neue, Arial, Open Sans, DejaVu Sans, sans-serif`, `mathtext.default: regular` (upright Helvetica for exponents like `$10^{-2}$`).
 - **Colormap**: `image.cmap: vernalis`.
-- **Rendering**: `lines.antialiased: True`, `patch.antialiased: True`, `axes.grid: False`.
+- **Rendering & Bars**: `lines.antialiased: True`, `patch.antialiased: True`, `patch.edgecolor: none`, `patch.linewidth: 0.0`, `patch.force_edgecolor: False`, `axes.grid: False`.
 - **Export**: `savefig.transparent: True`, `savefig.dpi: 300`.
 
 ### Paper vs Presentation Comparison
@@ -143,6 +143,12 @@ anchored = AnchoredOffsetbox(
 )
 ax.add_artist(anchored)
 ```
+
+### Bar Charts & Histograms (Relative Width & Spacing)
+Matplotlib's default `ax.bar(..., width=0.8)` crowds bars too closely together and does not expose a `bar.width` rcParam. Across all `degas` styles (paper and presentation), prefer airy, borderless bars with a **`0.64` bar-to-pitch ratio** (~`0.36` inter-bar gap) and subtle outer horizontal padding (`xmargin=0.04`):
+- **Preferred**: call `dg.plot_bar(heights, x=labels, ax=ax)` (uses `width=dg.BAR_WIDTH` = `0.64`, `edgecolor="none"`, `linewidth=0.0`, `xmargin=0.04`, and `bottom=0` for non-negative values).
+- **Direct matplotlib**: `ax.bar(x, y, width=dg.BAR_WIDTH)` + `ax.margins(x=0.04)` (borderless fill is already set by `patch.edgecolor: none` and `patch.linewidth: 0.0` in all house styles).
+- **Histograms**: pass `rwidth=dg.BAR_WIDTH` (`0.64`) to `ax.hist(...)` for matching inter-bar spacing.
 
 ### Background Scatter + Accent Fit on Dark Slides
 When showing noisy observations behind a trend line on a dark slide:

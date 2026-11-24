@@ -4,6 +4,10 @@
 
 lines.antialiased: True
 patch.antialiased: True
+# Clean borderless bar/patch defaults (pair with width=0.64 or degas.plot_bar)
+patch.edgecolor: none
+patch.linewidth: 0.0
+patch.force_edgecolor: False
 
 # Prefer Helvetica when installed, falling back cleanly without font warnings
 font.family: sans-serif

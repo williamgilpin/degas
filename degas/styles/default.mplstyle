@@ -7,6 +7,10 @@ mathtext.default: regular
 
 image.cmap: vernalis
 
+patch.edgecolor: none
+patch.linewidth: 0.0
+patch.force_edgecolor: False
+
 savefig.transparent: True
 savefig.dpi: 300
 

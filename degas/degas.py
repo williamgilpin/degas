@@ -101,6 +101,51 @@ viridis_arcadia = make_cmap(hexes, stops)
 
 
 style_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "styles")
+
+# Default relative bar width (bar width / center-to-center pitch), leaving ~36% inter-bar gap
+BAR_WIDTH = 0.64
+
+
+def plot_bar(
+    y,
+    x=None,
+    width=BAR_WIDTH,
+    ax=None,
+    xmargin=0.04,
+    **kwargs,
+):
+    """
+    Create a bar chart using the degas house bar proportions (relative bar width
+    ``0.64``, ~36% spacing between bars, borderless fill, and balanced outer margins).
+
+    Args:
+        y (array-like): Bar heights.
+        x (array-like or None): Bar x positions or category labels. Defaults to
+            ``np.arange(len(y))``.
+        width (float): Bar width relative to unit spacing (default ``0.64``).
+        ax (matplotlib.axes.Axes or None): Axes to draw on. Defaults to ``plt.gca()``.
+        xmargin (float): Horizontal padding fraction outside the outer bars
+            (default ``0.04``).
+        **kwargs: Additional keyword arguments forwarded to ``ax.bar``.
+
+    Returns:
+        ax (matplotlib.axes.Axes): The axes containing the bar chart.
+    """
+    if ax is None:
+        ax = plt.gca()
+    y_arr = np.asarray(y)
+    if x is None:
+        x = np.arange(len(y_arr))
+    kwargs.setdefault("edgecolor", "none")
+    kwargs.setdefault("linewidth", 0.0)
+    ax.bar(x, y_arr, width=width, **kwargs)
+    if xmargin is not None:
+        ax.margins(x=xmargin)
+    if y_arr.size > 0 and np.all(np.nan_to_num(y_arr, nan=0.0) >= 0):
+        ax.set_ylim(bottom=0)
+    return ax
+
+
 def set_style(style_name="default"):
     """
     Set the style of the plot to one of the styles in the styles folder. This wraps

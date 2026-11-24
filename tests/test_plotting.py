@@ -18,6 +18,16 @@ class TestPlottingAndUtilities(unittest.TestCase):
     def tearDown(self):
         plt.close("all")
 
+    def test_plot_bar_default_width_and_spacing(self):
+        heights = np.array([0.5, 0.9, 0.35, 0.8, 0.2])
+        fig, ax = plt.subplots()
+        out_ax = dg.plot_bar(heights, ax=ax)
+        self.assertIs(out_ax, ax)
+        self.assertEqual(len(ax.patches), len(heights))
+        for patch in ax.patches:
+            self.assertAlmostEqual(patch.get_width(), dg.BAR_WIDTH, places=6)
+        self.assertEqual(ax.get_ylim()[0], 0.0)
+
     def test_plot_err_symmetric_and_asymmetric(self):
         x = np.linspace(0, 1, 20)
         y = x**2

@@ -38,6 +38,8 @@ class TestStyles(unittest.TestCase):
                 self.assertEqual(plt.rcParams["image.cmap"], "vernalis")
                 self.assertEqual(plt.rcParams["font.sans-serif"][0], "Helvetica")
                 self.assertTrue(plt.rcParams["savefig.transparent"])
+                self.assertEqual(plt.rcParams["patch.edgecolor"], "none")
+                self.assertEqual(plt.rcParams["patch.linewidth"], 0.0)
 
         matplotlib.rcdefaults()
         dg.set_style("dark")

@@ -17,6 +17,8 @@ lines.color: FFFFFF
 
 patch.facecolor: 4DAAE8
 patch.edgecolor: none
+patch.linewidth: 0.0
+patch.force_edgecolor: False
 patch.antialiased: True
 
 text.color: FFFFFF

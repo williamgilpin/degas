@@ -5,10 +5,11 @@
 lines.antialiased: True
 # lines.markersize: 7.0
 
-# patch.linewidth: 0.5
+patch.linewidth: 0.0
 # patch.facecolor: 348ABD
-# patch.edgecolor: AEAEFF
-# patch.antialiased: True
+patch.edgecolor: none
+patch.force_edgecolor: False
+patch.antialiased: True
 
 font.family: sans-serif
 font.sans-serif: Helvetica, Helvetica Neue, Arial, Open Sans, DejaVu Sans, sans-serif
