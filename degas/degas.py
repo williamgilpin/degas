@@ -1,8 +1,11 @@
+import contextlib
 import os, warnings
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import patches
 import matplotlib.path as mpath
+import matplotlib.scale as mscale
+import matplotlib.ticker as mticker
 
 
 try:
@@ -240,14 +243,21 @@ def colorbar(
     ax=None,
     location="right",
     size="5%",
-    pad=0.08,
+    pad=None,
     label=None,
     labelpad=None,
+    max_ticks=5,
+    inner_ticks=False,
     **kwargs,
 ):
     """
     Attach a minimal, frameless colorbar whose length matches the adjacent axes box,
     with outward ticks and label baseline (foot of the text) facing inward.
+
+    When ``fig`` uses ``constrained_layout=True`` (the default in ``degas.subplots``),
+    uses matplotlib's layout-aware colorbar so multi-panel grids never collide and
+    ``inner_ticks=True`` dynamically expands spacing for wide/many-sig-fig tick labels.
+    Otherwise falls back to ``make_axes_locatable`` with dynamic tick-extent measurement.
 
     Args:
         mappable: Matplotlib ScalarMappable (e.g. return value of ``imshow``,
@@ -256,63 +266,322 @@ def colorbar(
             ``mappable.axes`` or ``plt.gca()``.
         location (str): Side to place the colorbar on (``"right"``, ``"left"``,
             ``"top"``, or ``"bottom"``).
-        size (str or float): Width (or height) of the colorbar axes passed to
-            ``make_axes_locatable.append_axes`` (default ``"5%"``).
-        pad (float): Spacing in inches between the parent axes and colorbar
-            (default ``0.08``).
+        size (str or float): Colorbar thickness (e.g. ``"5%"`` or fraction ``0.05``).
+        pad (float or None): Spacing between parent axes and colorbar. Automatically
+            chosen (and dynamically sized for ``inner_ticks=True``) when ``None``.
         label (str or None): Optional colorbar label.
-        labelpad (float or None): Distance in points between tick labels and the
-            colorbar label.
+        labelpad (float or None): Distance in points between tick labels (or the
+            colorbar strip when ``inner_ticks=True``) and the colorbar label.
+        max_ticks (int or None): Maximum number of colorbar ticks (default ``5``).
+        inner_ticks (bool): If True, place ticks and tick labels on the side of the
+            colorbar closer to the figure, put the text label directly against the
+            outer side of the colorbar strip, and dynamically size the gap between
+            the figure and colorbar so tick labels never overlap the figure.
         **kwargs: Additional keyword arguments forwarded to ``fig.colorbar``.
 
     Returns:
         cbar (matplotlib.colorbar.Colorbar): The created colorbar.
     """
-    from mpl_toolkits.axes_grid1 import make_axes_locatable
+    from mpl_toolkits.axes_grid1 import Size, make_axes_locatable
 
     if ax is None:
         ax = getattr(mappable, "axes", None) or plt.gca()
     fig = ax.figure
-    divider = make_axes_locatable(ax)
-    cax = divider.append_axes(location, size=size, pad=pad)
     orientation = "horizontal" if location in ("top", "bottom") else "vertical"
-    kwargs.setdefault("orientation", orientation)
-    cbar = fig.colorbar(mappable, cax=cax, **kwargs)
+    use_constrained = bool(fig.get_constrained_layout())
+    divider = None
+
+    if use_constrained:
+        if isinstance(size, str) and size.endswith("%"):
+            fraction = float(size[:-1]) / 100.0
+        else:
+            fraction = float(size)
+        cb_pad = 0.04 if pad is None else pad
+        kwargs.setdefault("fraction", fraction)
+        kwargs.setdefault("pad", cb_pad)
+        cbar = fig.colorbar(mappable, ax=ax, location=location, **kwargs)
+    else:
+        divider = make_axes_locatable(ax)
+        initial_pad = 0.08 if pad is None else pad
+        cax = divider.append_axes(location, size=size, pad=initial_pad)
+        kwargs.setdefault("orientation", orientation)
+        cbar = fig.colorbar(mappable, cax=cax, **kwargs)
+
     cbar.outline.set_visible(False)
     cbar.ax.tick_params(direction="out")
+    if max_ticks is not None:
+        cb_axis = "x" if orientation == "horizontal" else "y"
+        limit_ticks(cbar.ax, max_ticks=max_ticks, axis=cb_axis)
+
+    if inner_ticks:
+        if location == "right":
+            cbar.ax.yaxis.set_ticks_position("left")
+            cbar.ax.yaxis.set_label_position("right")
+        elif location == "left":
+            cbar.ax.yaxis.set_ticks_position("right")
+            cbar.ax.yaxis.set_label_position("left")
+        elif location == "top":
+            cbar.ax.xaxis.set_ticks_position("bottom")
+            cbar.ax.xaxis.set_label_position("top")
+        elif location == "bottom":
+            cbar.ax.xaxis.set_ticks_position("top")
+            cbar.ax.xaxis.set_label_position("bottom")
+
+    default_labelpad = 4 if inner_ticks else 6
+    lpad = default_labelpad if labelpad is None else labelpad
     if label is not None:
         if location == "right":
-            cbar.set_label(
-                label,
-                rotation=270,
-                va="bottom",
-                labelpad=6 if labelpad is None else labelpad,
-            )
+            cbar.set_label(label, rotation=270, va="bottom", labelpad=lpad)
         elif location == "left":
-            cbar.set_label(
-                label,
-                rotation=90,
-                va="bottom",
-                labelpad=6 if labelpad is None else labelpad,
-            )
+            cbar.set_label(label, rotation=90, va="bottom", labelpad=lpad)
         else:
-            cbar.set_label(label, labelpad=6 if labelpad is None else labelpad)
+            cbar.set_label(label, labelpad=lpad)
+
+    if inner_ticks and pad is None and not use_constrained and divider is not None:
+        fig.canvas.draw()
+        renderer = fig.canvas.get_renderer()
+        if orientation == "vertical":
+            labels = [t for t in cbar.ax.get_yticklabels() if t.get_text()]
+            max_px = max((t.get_window_extent(renderer).width for t in labels), default=0.0)
+            extra_pt = plt.rcParams["ytick.major.size"] + plt.rcParams["ytick.major.pad"] + 8.0
+            dynamic_pad = max(0.08, max_px / fig.dpi + extra_pt / 72.0)
+            horiz = list(divider.get_horizontal())
+            if len(horiz) >= 2:
+                horiz[1] = Size.Fixed(dynamic_pad)
+                divider.set_horizontal(horiz)
+        else:
+            labels = [t for t in cbar.ax.get_xticklabels() if t.get_text()]
+            max_px = max((t.get_window_extent(renderer).height for t in labels), default=0.0)
+            extra_pt = plt.rcParams["xtick.major.size"] + plt.rcParams["xtick.major.pad"] + 8.0
+            dynamic_pad = max(0.08, max_px / fig.dpi + extra_pt / 72.0)
+            vert = list(divider.get_vertical())
+            if len(vert) >= 2:
+                vert[1] = Size.Fixed(dynamic_pad)
+                divider.set_vertical(vert)
+
     return cbar
 
 
-def set_style(style_name="default"):
+def set_box_aspect(aspect=1.0, ax=None):
     """
-    Set the style of the plot to one of the styles in the styles folder. This wraps
-    matplotlib's style.use function, layering ``base.mplstyle`` underneath the
-    selected style so all house styles share common defaults (Helvetica font stack,
-    ``vernalis`` colormap, transparent high-DPI exports).
+    Lock the physical height/width aspect ratio of the plot box itself, independent
+    of axis limits, log scaling, tick label widths, or attached colorbars.
+
+    Args:
+        aspect (float): Desired physical ``height / width`` ratio of the plot box
+            (e.g. ``1.0`` for a square box, ``0.75`` for a 4:3 box).
+        ax (matplotlib.axes.Axes or None): Target axes. Defaults to ``plt.gca()``.
+
+    Returns:
+        ax (matplotlib.axes.Axes): The updated axes.
     """
+    if ax is None:
+        ax = plt.gca()
+    if ax.name == "3d":
+        ax.set_box_aspect((1.0, 1.0, float(aspect)))
+    else:
+        ax.set_box_aspect(float(aspect))
+    return ax
+
+
+def subplots(
+    nrows=1,
+    ncols=1,
+    figsize=None,
+    box_aspect=None,
+    box_size=None,
+    constrained_layout=True,
+    **kwargs,
+):
+    """
+    Create a figure and subplot grid while protecting the physical aspect ratio
+    of each plot box (so labels, titles, and colorbars do not distort the box shape).
+
+    Args:
+        nrows (int): Number of subplot rows (default ``1``).
+        ncols (int): Number of subplot columns (default ``1``).
+        figsize (tuple[float, float] or None): Overall figure size ``(width, height)``
+            in inches. When ``box_aspect`` and ``box_size`` are omitted, the intended
+            per-panel box aspect is inferred as ``(H / nrows) / (W / ncols)``.
+        box_aspect (float or None): Explicit physical ``height / width`` ratio for
+            every plot box (e.g. ``1.0`` for square boxes).
+        box_size (tuple[float, float] or None): Desired physical ``(width, height)``
+            in inches of each individual plot box. Automatically sets ``box_aspect``
+            and computes an enclosing ``figsize`` with room for labels and ticks.
+        constrained_layout (bool): Enable matplotlib constrained layout (default True).
+        **kwargs: Additional keyword arguments forwarded to ``plt.subplots``.
+
+    Returns:
+        tuple: ``(fig, axes)`` matching ``plt.subplots``.
+    """
+    if box_size is not None:
+        bw, bh = box_size
+        if box_aspect is None:
+            box_aspect = float(bh) / float(bw)
+        if figsize is None:
+            # Add generous breathing room around each plot box for labels/ticks/colorbars
+            pad_w = 1.15 * ncols + 0.35
+            pad_h = 0.95 * nrows + 0.35
+            figsize = (bw * ncols + pad_w, bh * nrows + pad_h)
+
+    if figsize is None:
+        base_w, base_h = plt.rcParams["figure.figsize"]
+        figsize = (base_w * ncols, base_h * nrows)
+
+    if box_aspect is None:
+        box_aspect = (figsize[1] / nrows) / (figsize[0] / ncols)
+
+    if "layout" not in kwargs:
+        kwargs["constrained_layout"] = constrained_layout
+
+    fig, axes = plt.subplots(nrows, ncols, figsize=figsize, **kwargs)
+    for ax in np.atleast_1d(axes).ravel():
+        set_box_aspect(box_aspect, ax=ax)
+    return fig, axes
+
+
+# Default maximum major tick count (yields 3-5 clean ticks and always preserves 0)
+DEFAULT_MAX_TICKS = 5
+_DEFAULT_TICK_STEPS = (1, 2, 2.5, 5, 10)
+_ORIG_LINEAR_LOCATORS = mscale.LinearScale.set_default_locators_and_formatters
+_ORIG_LOG_LOCATORS = mscale.LogScale.set_default_locators_and_formatters
+_ACTIVE_TICK_CONFIG = None
+
+
+def _make_clean_locator(scale_name, max_ticks, min_ticks=3, steps=_DEFAULT_TICK_STEPS, base=10.0):
+    if scale_name == "log":
+        return mticker.LogLocator(base=base, numticks=max(2, int(max_ticks)))
+    nbins = max(1, int(max_ticks) - 1)
+    eff_min = min(int(min_ticks), int(max_ticks))
+    return mticker.MaxNLocator(nbins=nbins, steps=list(steps), min_n_ticks=eff_min)
+
+
+def set_max_ticks(max_ticks=DEFAULT_MAX_TICKS, min_ticks=3, steps=_DEFAULT_TICK_STEPS):
+    """
+    Set a global cap on default major tick counts for newly created matplotlib axes
+    and colorbars (3-5 clean ticks by default, always preserving ``0`` when in range).
+
+    Explicit ``ax.set_xticks`` / ``ax.set_yticks`` calls and categorical axes are
+    unaffected. Pass ``max_ticks=None`` to restore matplotlib's default behavior.
+
+    Args:
+        max_ticks (int or None): Maximum number of major ticks per axis (default ``5``,
+            giving 3-5 ticks via ``MaxNLocator(nbins=4, steps=[1, 2, 2.5, 5, 10])``).
+            Set to ``None`` to restore matplotlib's default ``AutoLocator``.
+        min_ticks (int): Minimum number of major ticks to target (default ``3``).
+        steps (sequence[float]): Preferred nice step multiples (default
+            ``(1, 2, 2.5, 5, 10)``).
+    """
+    global _ACTIVE_TICK_CONFIG
+    if max_ticks is None:
+        mscale.LinearScale.set_default_locators_and_formatters = _ORIG_LINEAR_LOCATORS
+        mscale.LogScale.set_default_locators_and_formatters = _ORIG_LOG_LOCATORS
+        _ACTIVE_TICK_CONFIG = None
+        return
+
+    config = (int(max_ticks), int(min_ticks), tuple(steps))
+    _ACTIVE_TICK_CONFIG = config
+
+    def _degas_linear_locators(self, axis):
+        _ORIG_LINEAR_LOCATORS(self, axis)
+        mt, mn, st = _ACTIVE_TICK_CONFIG
+        axis.set_major_locator(_make_clean_locator("linear", mt, min_ticks=mn, steps=st))
+
+    def _degas_log_locators(self, axis):
+        _ORIG_LOG_LOCATORS(self, axis)
+        mt, mn, st = _ACTIVE_TICK_CONFIG
+        axis.set_major_locator(
+            _make_clean_locator("log", mt, min_ticks=mn, steps=st, base=self.base)
+        )
+
+    mscale.LinearScale.set_default_locators_and_formatters = _degas_linear_locators
+    mscale.LogScale.set_default_locators_and_formatters = _degas_log_locators
+
+
+def limit_ticks(
+    ax=None,
+    max_ticks=DEFAULT_MAX_TICKS,
+    axis="both",
+    min_ticks=3,
+    steps=_DEFAULT_TICK_STEPS,
+):
+    """
+    Cap the number of major ticks on an existing axes (typically 3-5 clean ticks,
+    preserving ``0`` whenever it lies within the axis limits).
+
+    Args:
+        ax (matplotlib.axes.Axes or None): Target axes. Defaults to ``plt.gca()``.
+        max_ticks (int): Maximum number of major ticks (default ``5``).
+        axis (str): ``"x"``, ``"y"``, or ``"both"`` (default ``"both"``).
+        min_ticks (int): Minimum number of major ticks to target (default ``3``).
+        steps (sequence[float]): Preferred nice step multiples.
+
+    Returns:
+        ax (matplotlib.axes.Axes): The updated axes.
+    """
+    if ax is None:
+        ax = plt.gca()
+    if axis not in ("x", "y", "both"):
+        raise ValueError("axis must be 'x', 'y', or 'both'")
+    axes_to_update = []
+    if axis in ("x", "both"):
+        axes_to_update.append((ax.xaxis, ax.get_xscale()))
+    if axis in ("y", "both"):
+        axes_to_update.append((ax.yaxis, ax.get_yscale()))
+    for ax_obj, scale_name in axes_to_update:
+        if isinstance(ax_obj.get_major_locator(), mticker.FixedLocator):
+            continue
+        base = getattr(ax_obj.get_scale_obj(), "base", 10.0) if hasattr(ax_obj, "get_scale_obj") else 10.0
+        ax_obj.set_major_locator(
+            _make_clean_locator(scale_name, max_ticks, min_ticks=min_ticks, steps=steps, base=base)
+        )
+    return ax
+
+
+def _style_files(style_name="default"):
     base_file = os.path.join(style_path, "base.mplstyle")
     target_file = os.path.join(style_path, style_name + ".mplstyle")
     if style_name == "base" or not os.path.exists(base_file):
-        plt.style.use(target_file)
-    else:
-        plt.style.use([base_file, target_file])
+        return [target_file]
+    return [base_file, target_file]
+
+
+def set_style(style_name="default", max_ticks=DEFAULT_MAX_TICKS):
+    """
+    Set the style of the plot to one of the styles in the styles folder. This wraps
+    matplotlib's style.use function, layering ``base.mplstyle`` underneath the
+    selected style and capping default tick density to 3-5 clean ticks (preserving ``0``).
+
+    Args:
+        style_name (str): Name of a style in ``degas/styles`` (e.g. ``"degas_figure"``,
+            ``"dark"``, ``"pastel_rainbow"``, ``"default"``, ``"base"``).
+        max_ticks (int or None): Maximum default major ticks per axis (default ``5``).
+            Pass ``None`` to keep matplotlib's default tick density.
+    """
+    plt.style.use(_style_files(style_name))
+    set_max_ticks(max_ticks)
+
+
+@contextlib.contextmanager
+def style_context(style_name="default", max_ticks=DEFAULT_MAX_TICKS):
+    """
+    Context manager applying a ``degas`` house style and tick-density cap for a
+    single figure without leaking global state.
+
+    Args:
+        style_name (str): Name of a style in ``degas/styles``.
+        max_ticks (int or None): Maximum default major ticks per axis (default ``5``).
+    """
+    prev_config = _ACTIVE_TICK_CONFIG
+    with plt.style.context(_style_files(style_name)):
+        set_max_ticks(max_ticks)
+        try:
+            yield
+        finally:
+            if prev_config is None:
+                set_max_ticks(None)
+            else:
+                set_max_ticks(*prev_config)
 
 
 def plot_splity(x, y1, y2, ax=None, kwargs1=None, kwargs2=None):

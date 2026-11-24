@@ -7,6 +7,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import numpy as np
 
 import degas as dg
 
@@ -14,6 +15,7 @@ import degas as dg
 class TestStyles(unittest.TestCase):
     def tearDown(self):
         plt.close("all")
+        dg.set_max_ticks(None)
         matplotlib.rcdefaults()
 
     def test_data_path_contains_expected_styles(self):
@@ -96,6 +98,22 @@ class TestStyles(unittest.TestCase):
             colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
             self.assertEqual(len(colors), 12)
         self.assertEqual(plt.rcParams["image.cmap"], original_cmap)
+
+    def test_degas_style_context_caps_ticks_and_restores(self):
+        with dg.style_context("degas_figure"):
+            fig, ax = plt.subplots()
+            ax.plot(np.linspace(0, 8, 50), np.linspace(-0.75, 1.05, 50))
+            fig.canvas.draw()
+            xticks = [t for t in ax.get_xticks() if ax.get_xlim()[0] <= t <= ax.get_xlim()[1]]
+            yticks = [t for t in ax.get_yticks() if ax.get_ylim()[0] <= t <= ax.get_ylim()[1]]
+            self.assertTrue(3 <= len(xticks) <= 5, f"Unexpected xticks: {xticks}")
+            self.assertTrue(3 <= len(yticks) <= 5, f"Unexpected yticks: {yticks}")
+            self.assertTrue(any(abs(t) < 1e-9 for t in yticks), f"0 missing from yticks: {yticks}")
+            plt.close(fig)
+        # Global locator restored to stock AutoLocator after exiting style_context
+        fig2, ax2 = plt.subplots()
+        self.assertIsInstance(ax2.xaxis.get_major_locator(), matplotlib.ticker.AutoLocator)
+        plt.close(fig2)
 
     def test_invalid_style_raises(self):
         with self.assertRaises(OSError):

@@ -38,11 +38,55 @@ class TestPlottingAndUtilities(unittest.TestCase):
 
     def test_colorbar_frameless_and_aligned(self):
         fig, ax = plt.subplots()
-        im = ax.imshow(np.arange(16).reshape(4, 4))
+        im = ax.imshow(np.linspace(-0.85, 0.85, 16).reshape(4, 4))
         cbar = dg.colorbar(im, ax=ax, label="Value")
         self.assertFalse(cbar.outline.get_visible())
         self.assertEqual(cbar.ax.get_ylabel(), "Value")
         self.assertEqual(cbar.ax.yaxis.label.get_rotation(), 270.0)
+        fig.canvas.draw()
+        cticks = [t for t in cbar.get_ticks() if -0.85 <= t <= 0.85]
+        self.assertTrue(3 <= len(cticks) <= 5, f"Unexpected colorbar ticks: {cticks}")
+        self.assertTrue(any(abs(t) < 1e-9 for t in cticks), f"0 missing from colorbar ticks: {cticks}")
+
+    def test_colorbar_inner_ticks_and_dynamic_spacing(self):
+        fig, (ax_small, ax_wide) = dg.subplots(1, 2, box_size=(2.5, 2.5))
+        im_small = ax_small.imshow(np.linspace(0.0, 1.0, 16).reshape(4, 4))
+        im_wide = ax_wide.imshow(np.linspace(-0.00125, 0.00125, 16).reshape(4, 4))
+
+        cbar_small = dg.colorbar(im_small, ax=ax_small, label="A", inner_ticks=True)
+        cbar_wide = dg.colorbar(im_wide, ax=ax_wide, label="B", inner_ticks=True)
+        self.assertEqual(cbar_small.ax.yaxis.get_ticks_position(), "left")
+        self.assertEqual(cbar_small.ax.yaxis.get_label_position(), "right")
+        self.assertEqual(cbar_wide.ax.yaxis.get_ticks_position(), "left")
+        self.assertEqual(cbar_wide.ax.yaxis.get_label_position(), "right")
+
+        # Wide sig-fig tick labels should produce a wider dynamic gap than [0, 1]
+        fig.canvas.draw()
+        gap_small = cbar_small.ax.get_position().x0 - ax_small.get_position().x1
+        gap_wide = cbar_wide.ax.get_position().x0 - ax_wide.get_position().x1
+        self.assertGreater(gap_wide, gap_small)
+
+    def test_subplots_and_set_box_aspect(self):
+        fig, ax = dg.subplots(figsize=(4.0, 3.0))
+        self.assertAlmostEqual(ax.get_box_aspect(), 0.75, places=6)
+
+        fig2, axes = dg.subplots(2, 2, box_size=(2.5, 2.5))
+        for sub_ax in axes.ravel():
+            self.assertAlmostEqual(sub_ax.get_box_aspect(), 1.0, places=6)
+        dg.set_box_aspect(0.5, ax=axes[0, 0])
+        self.assertAlmostEqual(axes[0, 0].get_box_aspect(), 0.5, places=6)
+
+    def test_limit_ticks_preserves_zero_and_caps_count(self):
+        fig, ax = plt.subplots()
+        ax.plot([-3.0, 3.0], [-0.75, 1.05])
+        dg.limit_ticks(ax, max_ticks=5)
+        fig.canvas.draw()
+        for ticks, (lo, hi) in ((ax.get_xticks(), ax.get_xlim()), (ax.get_yticks(), ax.get_ylim())):
+            visible = [t for t in ticks if lo <= t <= hi]
+            self.assertTrue(3 <= len(visible) <= 5, f"Unexpected ticks: {visible}")
+            self.assertTrue(any(abs(t) < 1e-9 for t in visible), f"0 missing: {visible}")
+        with self.assertRaises(ValueError):
+            dg.limit_ticks(ax, axis="z")
 
     def test_plot_err_symmetric_and_asymmetric(self):
         x = np.linspace(0, 1, 20)

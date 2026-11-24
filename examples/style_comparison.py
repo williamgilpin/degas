@@ -96,13 +96,8 @@ def render_light_gallery(
     dpi: int = 300,
 ) -> str:
     """Render the 2x2 light paper gallery under degas_figure."""
-    style_chain = [
-        os.path.join(dg.data_path, "base.mplstyle"),
-        os.path.join(dg.data_path, "degas_figure.mplstyle"),
-    ]
-
-    with plt.style.context(style_chain):
-        fig, axes = plt.subplots(2, 2, figsize=(7.4, 6.4), constrained_layout=True)
+    with dg.style_context("degas_figure"):
+        fig, axes = dg.subplots(2, 2, box_size=(2.6, 2.6))
 
         # 1. Regression + 95% CI
         ax = axes[0, 0]
@@ -125,7 +120,6 @@ def render_light_gallery(
             color=dg.blue,
             ci_kwargs={"color": dg.blue, "alpha": 0.22},
         )
-        ax.set_yticks([0, 25, 50, 75])
         ax.set_xlabel("Largest Lyapunov Exponent")
         ax.set_ylabel("Forecast Error (sMAPE)")
         ax.set_title("Regression + 95% CI")
@@ -171,13 +165,8 @@ def render_dark_gallery(
     dpi: int = 300,
 ) -> str:
     """Render the 2x2 dark presentation gallery under dark.mplstyle."""
-    style_chain = [
-        os.path.join(dg.data_path, "base.mplstyle"),
-        os.path.join(dg.data_path, "dark.mplstyle"),
-    ]
-
-    with plt.style.context(style_chain):
-        fig, axes = plt.subplots(2, 2, figsize=(8.4, 7.4), constrained_layout=True)
+    with dg.style_context("dark"):
+        fig, axes = dg.subplots(2, 2, box_size=(2.9, 2.9))
 
         # 1. Regression + 95% CI
         ax = axes[0, 0]
@@ -201,7 +190,6 @@ def render_dark_gallery(
             linewidth=2.5,
             ci_kwargs={"color": dg.cornflower_blue, "alpha": 0.28},
         )
-        ax.set_yticks([0, 25, 50, 75])
         ax.set_xlabel("Chaoticity")
         ax.set_ylabel("Forecast Error")
         ax.set_title("Regression + 95% CI")
@@ -266,6 +254,52 @@ def render_dark_gallery(
     return out_path
 
 
+def render_colorbar_comparison(
+    data: dict,
+    out_dir: str,
+    composite: bool = False,
+    dpi: int = 300,
+) -> list[str]:
+    """Compare outer-tick vs inner-tick dynamic-pad colorbars on light and dark styles."""
+    saved = []
+    for style_name, bg_rgb, cmap, field_scale, label in (
+        ("degas_figure", (255, 255, 255), "vernalis", 1.0, "Intensity"),
+        ("dark", (22, 22, 24), "berlin", 0.00125, "Residual"),
+    ):
+        with dg.style_context(style_name):
+            fig, axes = dg.subplots(1, 2, box_size=(2.7, 2.7))
+            for ax, inner, title in (
+                (axes[0], False, "Outer ticks (default)"),
+                (axes[1], True, "Inner ticks (dynamic pad)"),
+            ):
+                if style_name == "dark":
+                    Z = field_scale * data["Z_div"]
+                    vmax = float(np.max(np.abs(Z)))
+                    im = ax.imshow(
+                        Z,
+                        cmap=cmap,
+                        norm=TwoSlopeNorm(vmin=-vmax, vcenter=0.0, vmax=vmax),
+                        extent=(-3, 3, -3, 3),
+                    )
+                else:
+                    im = ax.imshow(
+                        field_scale * data["Z_seq"],
+                        cmap=cmap,
+                        extent=(-3, 3, -3, 3),
+                    )
+                dg.colorbar(im, ax=ax, label=label, inner_ticks=inner)
+                ax.set_xlabel("x (mm)")
+                ax.set_ylabel("y (mm)")
+                ax.set_title(title)
+
+            fname = f"compare_colorbar_{'light' if style_name == 'degas_figure' else 'dark'}.png"
+            out_path = os.path.join(out_dir, fname)
+            _save_figure(out_path, bg_rgb if composite else None, dpi=dpi)
+            plt.close(fig)
+            saved.append(out_path)
+    return saved
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Render degas light paper and dark presentation comparison galleries."
@@ -305,6 +339,14 @@ def main() -> None:
             dpi=args.dpi,
         ),
     ]
+    outputs.extend(
+        render_colorbar_comparison(
+            data,
+            args.output_dir,
+            composite=args.composite,
+            dpi=args.dpi,
+        )
+    )
 
     for path in outputs:
         print(f"Saved {path}")

@@ -36,18 +36,17 @@ import os
 import matplotlib.pyplot as plt
 import degas as dg
 
-# Global (layers base.mplstyle + chosen style)
+# Global (layers base.mplstyle + chosen style + 3-5 tick cap preserving 0)
 dg.set_style("degas_figure")  # paper figures
 dg.set_style("dark")          # presentation slides
 
 # Scoped to a single figure (preferred when mixing paper + slide figures)
-style_file = os.path.join(dg.data_path, "dark.mplstyle")
-with plt.style.context(style_file):
+with dg.style_context("dark"):
     fig, ax = plt.subplots(figsize=(3.5, 3.5))
     ...
 ```
 
-> **Size & proportion rule**: Keep figures **small** (`2–3.5 in` per single panel) and export at **`dpi=300` or `dpi=600`**. Working at small physical sizes makes `10pt` (paper) and `12–15pt` (presentation) Helvetica text naturally bold and legible without shrinking into unreadable micro-type.
+> **Tick density & sizing rule**: `dg.set_style(...)` and `dg.style_context(...)` automatically cap default major ticks to **3–5 clean values** (always capturing `0` when in range) via `dg.set_max_ticks(5)` (override with `max_ticks=...` or `dg.limit_ticks(ax, max_ticks=...)`). Keep figures **small** (`2–3.5 in` per single panel) and export at **`dpi=300` or `dpi=600`** so `10–12pt` (paper) and `12–15pt` (presentation) Helvetica stays crisp without crowding.
 
 ## 2. Select a Perceptually Uniform Colormap
 
@@ -65,8 +64,11 @@ Importing `degas` registers all 41 colormaps (plus `_r` reversed variants) with 
 
 | Helper | Purpose | Key Usage Note |
 | :--- | :--- | :--- |
+| `dg.subplots(nrows, ncols, box_aspect=1.0, box_size=(w, h))` | Create figures while locking each **plot box's physical aspect ratio** | Protects box shape (`ax.set_box_aspect`) so axis labels, titles, and colorbars never squish squares into rectangles. Prefer over raw `plt.subplots(...)`. |
+| `dg.set_box_aspect(ratio, ax=ax)` | Lock physical `height / width` box aspect on an existing axes | Works before or after plotting on linear or log axes (modern companion to `fixed_aspect_ratio`). |
 | `dg.plot_bar(y, x=None, width=0.64, corner_radius=1.5, ax=ax)` | Bar chart with house proportions (`0.64` width, ~`0.36` gap, subtle `1.5pt` rounded top corners) | Borderless flat fill, aspect-preserving rounded top corners (flat on `y=0`), balanced `xmargin=0.04`. For histograms pass `rwidth=0.64`. |
-| `dg.colorbar(mappable, ax=ax, label=...)` | Frameless colorbar matching the adjacent square axes height | No outline border (`outline.set_visible(False)`), outward ticks, label foot facing inward (`rotation=270` on right), exact box-height alignment. Always prefer over raw `fig.colorbar(...)`. |
+| `dg.colorbar(mappable, ax=ax, label=..., inner_ticks=False)` | Frameless colorbar matching the adjacent square axes height | No outline border (`outline.set_visible(False)`), outward ticks, label foot facing inward (`rotation=270` on right), 3–5 ticks, exact box-height alignment. Pass `inner_ticks=True` to put ticks on the figure-facing side with dynamic anti-overlap padding and the text label right beside the color strip. |
+| `dg.set_max_ticks(5)` / `dg.limit_ticks(ax)` | Cap major ticks to 3–5 clean values (preserving `0`) | Activated automatically by `dg.set_style(...)` and `dg.style_context(...)`; pass `max_ticks=None` to restore stock matplotlib ticks. |
 | `dg.plot_err(y, errs, x=x, color=dg.blue)` | Line with shaded symmetric or asymmetric `(N, 2)` error band | `y` comes first; `color` must be an RGB 3-tuple in `[0, 1]` (not a hex string). |
 | `dg.plot_linear_confidence(x, y, ax=ax, return_model=True)` | Linear regression with 95% CI & PI bands (supports log axes) | Set `ax.set_xscale("log")` / `set_yscale("log")` *before* calling, or pass `logx`/`logy`. |
 | `dg.plot_splity(x, y1, y2, ax=ax, kwargs1=..., kwargs2=...)` | Dual y-axes with clean z-order layering | Pass distinct colors in `kwargs1`/`kwargs2` and match axis label colors. |

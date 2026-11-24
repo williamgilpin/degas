@@ -160,10 +160,12 @@ When showing noisy observations behind a trend line on a dark slide:
 
 ## 5. API Idioms & Gotchas
 
-### Scoped Styling vs Global Styling
-`dg.set_style(name)` mutates global `plt.rcParams` (applying `base.mplstyle` followed by `<name>.mplstyle`). When generating multiple figures with different themes in the same script or notebook, isolate each figure using `dg.data_path`:
+### Scoped Styling & Automatic Tick-Density Cap
+`dg.set_style(name)` mutates global `plt.rcParams` (applying `base.mplstyle` followed by `<name>.mplstyle`) and activates `dg.set_max_ticks(5)` so linear axes, log axes, and colorbars show **3–5 clean major ticks** and always capture `0` whenever `0` is in range (pass `max_ticks=None` to disable, or `dg.limit_ticks(ax, max_ticks=4)` on a single axes).
+
+When generating multiple figures with different themes in the same script or notebook, isolate each figure cleanly using `dg.style_context(name)`:
 ```python
-with plt.style.context(os.path.join(dg.data_path, "dark.mplstyle")):
+with dg.style_context("dark"):
     fig, ax = plt.subplots(figsize=(3.5, 3.5))
     ...
     dg.better_savefig("dark_panel.png", dpi=300, transparent=True)
@@ -186,6 +188,18 @@ with plt.style.context(os.path.join(dg.data_path, "dark.mplstyle")):
 
 ### `plot_linear_confidence` on Log Axes
 `dg.plot_linear_confidence` checks `ax.get_xscale() == "log"` and `ax.get_yscale() == "log"` when fitting in log space. Set log scales on `ax` **before** calling `plot_linear_confidence` (or pass `logx=True`/`logy=True` explicitly). All values on a log axis must be strictly positive.
+
+### Protecting the Plot Box Aspect Ratio (`dg.subplots` & `dg.set_box_aspect`)
+Standard `plt.subplots(figsize=(3.5, 3.5))` sets the *outer canvas* size, so long y-labels, titles, or colorbars compress the actual plot box into a distorted rectangle. Use `dg.subplots(...)` to lock the **physical shape of the plot box itself**:
+```python
+# Exact 1:1 square plot box regardless of label widths or colorbars
+fig, ax = dg.subplots(figsize=(3.5, 3.5))          # infers box_aspect=1.0
+fig, axes = dg.subplots(2, 2, box_size=(2.6, 2.6)) # exact 2.6x2.6 in boxes with room for labels
+dg.set_box_aspect(0.75, ax=ax)                     # lock existing axes to 4:3
+```
+
+### Inner-Tick Colorbar Layout (`dg.colorbar(..., inner_ticks=True)`)
+`dg.colorbar(im, ax=ax, label="Residual", inner_ticks=True)` moves the ticks and tick labels to the figure-facing side of the colorbar strip, places the text label directly beside the outer side of the color strip (with foot facing inward), and dynamically measures rendered tick-label widths so even many-sig-fig ticks (`-0.00125`) never overlap the plot box.
 
 ### `fixed_aspect_ratio` Call Order
 `dg.fixed_aspect_ratio(ratio, ax=ax, log=..., semilogx=..., semilogy=...)` computes the box aspect from the current `xlim`/`ylim`. Call it **after** all plotting and limit adjustments are complete.
