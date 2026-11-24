@@ -114,3 +114,12 @@ An Agent Skill for creating publication-grade figures with `degas` is included u
 uv sync
 MPLBACKEND=Agg uv run python -m unittest discover -s tests -p "test_*.py"
 ```
+
+## Releasing to PyPI
+
+Bump the version, commit, and tag in one step, then push to trigger the PyPI publish workflow:
+
+```bash
+uvx bump-my-version bump patch   # or minor / major
+git push --follow-tags
+```
