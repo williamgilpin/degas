@@ -1,14 +1,35 @@
 # Paper-figure style with the 12-color degas pastel rainbow color cycle.
 # Shares full high-contrast black box, outward ticks, larger Helvetica axis labels,
-# frameless legends, and editable transparent exports with degas_figure.mplstyle.
+# frameless legends, borderless scatter/bars, and editable transparent exports with
+# degas_figure.mplstyle.
 
 lines.linewidth: 1.5
+lines.markersize: 4.5
 lines.antialiased: True
 
 patch.linewidth: 0.0
 patch.edgecolor: none
 patch.force_edgecolor: False
 patch.antialiased: True
+
+scatter.edgecolors: none
+hist.bins: auto
+errorbar.capsize: 0.0
+pcolor.shading: auto
+contour.linewidth: 1.0
+contour.negative_linestyle: dashed
+
+boxplot.showcaps: False
+boxplot.boxprops.color: 000000
+boxplot.boxprops.linewidth: 0.9
+boxplot.whiskerprops.color: 000000
+boxplot.whiskerprops.linewidth: 0.9
+boxplot.medianprops.color: 000000
+boxplot.medianprops.linewidth: 1.5
+boxplot.flierprops.marker: o
+boxplot.flierprops.markersize: 3.5
+boxplot.flierprops.markerfacecolor: 000000
+boxplot.flierprops.markeredgewidth: 0.0
 
 font.family: sans-serif
 font.sans-serif: Helvetica, Helvetica Neue, Arial, Open Sans, DejaVu Sans, sans-serif
@@ -54,6 +75,8 @@ ytick.labelcolor: 000000
 ytick.labelsize: 10.0
 
 legend.frameon: False
+legend.scatterpoints: 1
+legend.numpoints: 1
 
 figure.figsize: 2, 2
 

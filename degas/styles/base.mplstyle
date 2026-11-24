@@ -9,6 +9,16 @@ patch.edgecolor: none
 patch.linewidth: 0.0
 patch.force_edgecolor: False
 
+# Clean scatter, histogram, errorbar, boxplot, pcolormesh, and contour defaults
+scatter.edgecolors: none
+hist.bins: auto
+errorbar.capsize: 0.0
+boxplot.showcaps: False
+boxplot.flierprops.marker: o
+boxplot.flierprops.markeredgewidth: 0.0
+pcolor.shading: auto
+contour.negative_linestyle: dashed
+
 # Prefer Helvetica when installed, falling back cleanly without font warnings
 font.family: sans-serif
 font.sans-serif: Helvetica, Helvetica Neue, Arial, Open Sans, DejaVu Sans, sans-serif
@@ -21,6 +31,8 @@ svg.fonttype: none
 
 axes.grid: False
 legend.frameon: False
+legend.scatterpoints: 1
+legend.numpoints: 1
 
 # Perceptually uniform default colormap (registered on `import degas`)
 image.cmap: vernalis

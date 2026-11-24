@@ -15,7 +15,18 @@ patch.edgecolor: none
 patch.linewidth: 0.0
 patch.force_edgecolor: False
 
+scatter.edgecolors: none
+hist.bins: auto
+errorbar.capsize: 0.0
+boxplot.showcaps: False
+boxplot.flierprops.marker: o
+boxplot.flierprops.markeredgewidth: 0.0
+pcolor.shading: auto
+contour.negative_linestyle: dashed
+
 legend.frameon: False
+legend.scatterpoints: 1
+legend.numpoints: 1
 
 savefig.transparent: True
 savefig.dpi: 300

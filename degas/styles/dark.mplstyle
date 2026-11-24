@@ -25,6 +25,13 @@ patch.linewidth: 0.0
 patch.force_edgecolor: False
 patch.antialiased: True
 
+scatter.edgecolors: none
+hist.bins: auto
+errorbar.capsize: 0.0
+pcolor.shading: auto
+contour.linewidth: 1.5
+contour.negative_linestyle: dashed
+
 text.color: FFFFFF
 
 # Transparent surfaces so exported figures integrate onto any dark slide
@@ -77,13 +84,20 @@ legend.frameon: False
 legend.fontsize: 11.0
 legend.facecolor: none
 legend.edgecolor: none
+legend.scatterpoints: 1
+legend.numpoints: 1
 
-boxplot.boxprops.color: D9D9D9
-boxplot.capprops.color: D9D9D9
-boxplot.flierprops.color: D9D9D9
-boxplot.flierprops.markeredgecolor: D9D9D9
-boxplot.whiskerprops.color: D9D9D9
-boxplot.medianprops.color: F5C242
+boxplot.showcaps: False
+boxplot.boxprops.color: 8C8C8C
+boxplot.boxprops.linewidth: 1.2
+boxplot.whiskerprops.color: 8C8C8C
+boxplot.whiskerprops.linewidth: 1.2
+boxplot.medianprops.color: 4DAAE8
+boxplot.medianprops.linewidth: 2.0
+boxplot.flierprops.marker: o
+boxplot.flierprops.markersize: 4.5
+boxplot.flierprops.markerfacecolor: CCCCCC
+boxplot.flierprops.markeredgewidth: 0.0
 
 savefig.facecolor: none
 savefig.edgecolor: none

@@ -109,8 +109,28 @@ style_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "styles")
 
 # Default relative bar width (bar width / center-to-center pitch), leaving ~36% inter-bar gap
 BAR_WIDTH = 0.64
-# Default subtle top-corner radius in points for degas.plot_bar rectangles
+# Default subtle top-corner radius in points for degas.plot_bar / plot_hist rectangles
 BAR_CORNER_RADIUS = 1.5
+
+
+def _is_dark_theme():
+    """Return True when the active matplotlib style uses light text (dark theme)."""
+    from matplotlib.colors import to_rgb
+
+    r, g, b = to_rgb(plt.rcParams.get("text.color", "black"))
+    luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
+    return luminance > 0.5
+
+
+def _next_cycle_color(ax):
+    """Fetch the next RGB color from ``ax``'s active property cycle."""
+    from matplotlib.colors import to_rgb
+
+    try:
+        return to_rgb(ax._get_lines.get_next_color())
+    except Exception:
+        cycle = plt.rcParams["axes.prop_cycle"].by_key().get("color", ["#5F98FF"])
+        return to_rgb(cycle[0])
 
 
 class _RoundedBar(patches.Rectangle):
@@ -235,6 +255,66 @@ def plot_bar(
         ax.margins(x=xmargin)
     if y_arr.size > 0 and np.all(np.nan_to_num(y_arr, nan=0.0) >= 0):
         ax.set_ylim(bottom=0)
+    return ax
+
+
+def plot_hist(
+    x,
+    bins="auto",
+    rwidth=BAR_WIDTH,
+    ax=None,
+    xmargin=0.04,
+    corner_radius=BAR_CORNER_RADIUS,
+    **kwargs,
+):
+    """
+    Create a histogram matching the degas bar chart aesthetic (relative bar width
+    ``0.64``, subtle rounded top corners, borderless fill, and flush ``y=0`` baseline).
+
+    Args:
+        x (array-like): Input data values.
+        bins (int, sequence, or str): Bin specification passed to ``ax.hist``
+            (default ``"auto"``).
+        rwidth (float): Relative width of bars as a fraction of bin width
+            (default ``0.64``).
+        ax (matplotlib.axes.Axes or None): Axes to draw on. Defaults to ``plt.gca()``.
+        xmargin (float): Horizontal padding fraction outside outer bars (default ``0.04``).
+        corner_radius (float): Subtle top-corner rounding radius in points
+            (default ``1.5``). Set to ``0`` for sharp square corners.
+        **kwargs: Additional keyword arguments forwarded to ``ax.hist``.
+
+    Returns:
+        ax (matplotlib.axes.Axes): The axes containing the histogram.
+    """
+    if ax is None:
+        ax = plt.gca()
+    kwargs.setdefault("edgecolor", "none")
+    kwargs.setdefault("linewidth", 0.0)
+    _, _, patches_out = ax.hist(x, bins=bins, rwidth=rwidth, **kwargs)
+    if corner_radius and corner_radius > 0:
+        flat_patches = (
+            [p for sub in patches_out for p in sub]
+            if isinstance(patches_out, list) and patches_out and hasattr(patches_out[0], "__iter__")
+            else list(patches_out)
+        )
+        for rect in flat_patches:
+            rounded = _RoundedBar(
+                rect.get_xy(),
+                rect.get_width(),
+                rect.get_height(),
+                corner_radius=corner_radius,
+                facecolor=rect.get_facecolor(),
+                edgecolor=rect.get_edgecolor(),
+                linewidth=rect.get_linewidth(),
+                alpha=rect.get_alpha(),
+                zorder=rect.get_zorder(),
+                label=rect.get_label(),
+            )
+            rect.remove()
+            ax.add_patch(rounded)
+    if xmargin is not None:
+        ax.margins(x=xmargin)
+    ax.set_ylim(bottom=0)
     return ax
 
 
@@ -603,16 +683,22 @@ def plot_splity(x, y1, y2, ax=None, kwargs1=None, kwargs2=None):
     """
     if not ax:
         ax = plt.gca()
-    if not kwargs1:
-        kwargs1 = {}
-    if not kwargs2:
-        kwargs2 = {}
-    ax.plot(x, y1, **kwargs1)
+    kw1 = dict(kwargs1) if kwargs1 else {}
+    kw2 = dict(kwargs2) if kwargs2 else {}
+    cycle = plt.rcParams["axes.prop_cycle"].by_key().get("color", ["#5F98FF", "#FF6347"])
+    if "color" not in kw1 and "c" not in kw1 and len(cycle) >= 1:
+        kw1["color"] = cycle[0]
+    if "color" not in kw2 and "c" not in kw2 and len(cycle) >= 2:
+        kw2["color"] = cycle[1]
+    ax.plot(x, y1, **kw1)
     ax2 = ax.twinx()
-    ax2.plot(x, y2, **kwargs2)
+    ax2.plot(x, y2, **kw2)
     ax.set_zorder(ax2.get_zorder() + 1)
     ax.patch.set_visible(False)
     ax2.patch.set_visible(True)
+    if _ACTIVE_TICK_CONFIG is not None:
+        mt, mn, st = _ACTIVE_TICK_CONFIG
+        limit_ticks(ax2, max_ticks=mt, axis="y", min_ticks=mn, steps=st)
     return ax, ax2
 
 def fixed_aspect_ratio(ratio, ax=None, log=False, semilogy=False, semilogx=False):
@@ -850,16 +936,15 @@ def fit_ellipse(data):
     width, height = 2 * np.sqrt(eigs)
     return width, height, angle
 
-from matplotlib import patches
 def draw_ellipse(points, ax=None, **kwargs):
     """
     Draw an ellipse around a cluster of points in 2D.
     
     Args:
-        ax (matplotlib.axes.Axes): The axes to draw the ellipse on.
         points (ndarray): The points in a cluster to enclose with an ellipse, containing n
                           ndarray elements representing each point, each with d elements
                           representing the coordinates for the point.
+        ax (matplotlib.axes.Axes): The axes to draw the ellipse on.
         **kwargs: Additional keyword arguments to pass to matplotlib.patches.Ellipse.
 
     Returns:
@@ -871,13 +956,17 @@ def draw_ellipse(points, ax=None, **kwargs):
         all_pairs = np.random.random((100, 2))
         all_pairs = all_pairs @ np.linalg.inv(np.random.random((2, 2)))
         plt.scatter(all_pairs[:, 0], all_pairs[:, 1])
-        draw_ellipse(plt.gca(), all_pairs, fill=False, edgecolor="red")
+        draw_ellipse(all_pairs, ax=plt.gca(), edgecolor="red")
     """
     if ax is None:
         ax = plt.gca()
     width, height, angle = fit_ellipse(points)
-    center = tuple(points.mean(axis=0))
-    ellipse = patches.Ellipse(center, width, height, angle, **kwargs)
+    center = tuple(np.mean(points, axis=0))
+    kwargs.setdefault("fill", False)
+    if "edgecolor" not in kwargs and "ec" not in kwargs and "color" not in kwargs:
+        kwargs["edgecolor"] = _next_cycle_color(ax)
+    kwargs.setdefault("linewidth", plt.rcParams["lines.linewidth"])
+    ellipse = patches.Ellipse(center, width, height, angle=float(np.degrees(angle)), **kwargs)
     ax.add_patch(ellipse)
     return ellipse
 
@@ -964,31 +1053,38 @@ def plot_cross(all_pairs,
     return ax
 
 
-def scatter_lines(x, y, s=None, c=None, linewidth2=1/10, **kwargs):
+def scatter_lines(x, y, s=None, c=None, linewidth2=None, ax=None, **kwargs):
     """
     Scatter plot with lines connecting the points. The line segments will match
-    the color of the point they start at, and their width will match the size
-    of the point.
+    the color of the point they start at.
 
     Args:
         x, y (array_like, shape (n, )): Input data
         s (scalar or array_like, shape (n, ), optional): Size of the points.
         c (color, sequence, or sequence of color, optional): The marker colors.
-        **kwargs: Additional keyword arguments are passed through to plt.scatter
+        linewidth2 (float or None): Line width of connecting segments. Defaults to
+            ``0.5 * rcParams["lines.linewidth"]``.
+        ax (matplotlib.axes.Axes or None): Axes to draw on. Defaults to ``plt.gca()``.
+        **kwargs: Additional keyword arguments are passed through to ``ax.scatter``.
     """
-    # Create scatter plot
-    scatter = plt.scatter(x, y, s=s, c=c, **kwargs)
+    if ax is None:
+        ax = plt.gca()
+    if linewidth2 is None:
+        linewidth2 = 0.5 * plt.rcParams["lines.linewidth"]
+    kwargs.setdefault("edgecolors", "none")
 
-    # Extract colors from the scatter plot
-    colors = scatter.to_rgba(c)
-    if np.isscalar(s):
-        sizes = np.full_like(x, s)
+    # Create scatter plot
+    if c is None:
+        base_color = _next_cycle_color(ax)
+        scatter = ax.scatter(x, y, s=s, color=base_color, **kwargs)
+        colors = [base_color] * len(x)
     else:
-        sizes = s
+        scatter = ax.scatter(x, y, s=s, c=c, **kwargs)
+        colors = scatter.to_rgba(c)
 
     ## Loop to draw lines connecting all points
     for i in range(len(x) - 1):
-        plt.plot(x[i:i+2], y[i:i+2], color=colors[i], linewidth=linewidth2)
+        ax.plot(x[i:i+2], y[i:i+2], color=colors[i], linewidth=linewidth2)
 
     return scatter
 
@@ -997,23 +1093,24 @@ def plot_err(
     y, 
     errs, 
     x=[], 
-    color=(0,0,0), 
+    color=None, 
     loglog=False,
     lightness=0.33/.5,
     ax=None,
-    fill_kwargs={},
+    fill_kwargs=None,
     **plot_kwargs):
     """
-    Plot a curve with error bars
+    Plot a curve with shaded error bands.
 
     Args:
         y (array): A list of values to plot
         errs (array): A list of errors, or a pair of lists of upper and lower errors 
         x (array): A list of x positions
-        color (3-tuple): The color of the plot lines and error bars
+        color (color or None): Line and error-band color (RGB tuple, hex string, or
+            named color). If None, uses the next color from the active property cycle.
         loglog (bool): Whether to plot the x and y axes in log scale
-        lightness (float): The visual lightness of the error bars
-        fill_kwargs (dict): keyword arguments passed to the region filling plot
+        lightness (float): The visual lightness of the error bars on light themes
+        fill_kwargs (dict or None): keyword arguments passed to ``ax.fill_between``
         plot_kwargs: passed to the line plot
 
     Returns:
@@ -1026,11 +1123,19 @@ def plot_err(
         plot_err(y, errs, x=x, color=(0,0,1))
 
     """
+    from matplotlib.colors import to_rgb
+
     if ax is None:
         ax = plt.gca()
     if len(x) < 1:
         x = np.arange(len(y))
-    
+    if color is None:
+        color_rgb = _next_cycle_color(ax)
+    else:
+        color_rgb = to_rgb(color)
+
+    errs = np.asarray(errs)
+    y = np.asarray(y)
     if len(errs.shape) > 1:
         if errs.shape[1] == 2:
             err_lo, err_hi = errs[:, 0], errs[:, 1]
@@ -1040,15 +1145,21 @@ def plot_err(
         
     trace_lo, trace_hi = y - err_lo, y + err_hi
 
-    
-    ## Set default colors and other plot properties
-    all_fill_kwargs = dict(
-        color=lighter(color, lightness),
-        edgecolor="none",
-    )
+    ## Set default colors and other plot properties (adapt band fill to dark vs light theme)
+    if _is_dark_theme():
+        all_fill_kwargs = dict(
+            color=color_rgb,
+            alpha=0.28,
+            edgecolor="none",
+        )
+    else:
+        all_fill_kwargs = dict(
+            color=lighter(color_rgb, lightness),
+            edgecolor="none",
+        )
     
     all_plot_kwargs = dict(
-        color=color,
+        color=color_rgb,
     )
     
     all_plot_kwargs.update(plot_kwargs) # update to user-specified plot_kwargs
@@ -1056,17 +1167,18 @@ def plot_err(
     z = lineplot[0].get_zorder()
 
     all_fill_kwargs["zorder"] = z - 1
-    all_fill_kwargs.update(fill_kwargs) # update to user-specified fill_kwargs
-    fillplot = ax.fill_between(x, trace_lo, trace_hi, **all_fill_kwargs)
+    if fill_kwargs:
+        all_fill_kwargs.update(fill_kwargs) # update to user-specified fill_kwargs
+    ax.fill_between(x, trace_lo, trace_hi, **all_fill_kwargs)
     if loglog:
-        ax.yscale('log', nonposy='clip')
-        ax.xscale('log', nonposy='clip')
+        ax.set_yscale('log', nonpositive='clip')
+        ax.set_xscale('log', nonpositive='clip')
     
     return ax
 
 def plot3dproj(x, y, z, *args, 
     ax=None,
-    color=(0,0,0), 
+    color=None, 
     shadow_dist=1.0, 
     color_proj=None, 
     elev_azim=(39,-47), 
@@ -1080,13 +1192,12 @@ def plot3dproj(x, y, z, *args,
     ----------
     x, y, z : 1D arrays of coordinates to plot
     *args : arguments passed to the matplotlib plt.plot functions
-    color : length-3 tuple
-        The RGB color (with each element in [0,1]) to use for the
-        three dimensional line plot
-    color_proj : length-3 tuple
-        The RGB color (with each element in [0,1]) to use for the
-        two dimensional projection plots. Defaults to a lighter version of the 
-        plotting color
+    color : color or None
+        Color for the three-dimensional line plot. Defaults to black on light themes
+        or ``degas.cornflower_blue`` on dark themes.
+    color_proj : color or None
+        Color for the two-dimensional projection plots. Defaults to a softer version
+        of ``color`` adapted to the active theme.
     shadow_dist : float
         The relative distance of axes to their shadow. If a single value, 
         then the same distance is used for all three axies. If a triple, then 
@@ -1099,11 +1210,17 @@ def plot3dproj(x, y, z, *args,
         The integer aspect ratio to impose on the axes. If not passed, the default
         aspect ratio is used
     """
+    from matplotlib.colors import to_rgb
+
     if ax is None:
         fig = plt.figure(figsize=(7, 7))
-        ax = fig.add_subplot(111, projection= '3d')
+        ax = fig.add_subplot(111, projection='3d')
+    if color is None:
+        color_rgb = tuple(cornflower_blue) if _is_dark_theme() else (0.0, 0.0, 0.0)
+    else:
+        color_rgb = to_rgb(color)
     if color_proj is None:
-        color_proj = lighter(color, .6)
+        color_proj = darker(color_rgb, 0.5) if _is_dark_theme() else lighter(color_rgb, 0.6)
 
     if np.isscalar(shadow_dist) == 1:
         sdist_x = shadow_dist
@@ -1116,7 +1233,7 @@ def plot3dproj(x, y, z, *args,
     ax.plot(y, z, *args, zdir='x', zs=sdist_x*np.min(x), color=color_proj, **kwargs)
     ax.plot(x, y, *args, zdir='z', zs=sdist_z*np.min(z), color=color_proj, **kwargs)
 
-    ax.plot(x, y, z, *args, color=color, **kwargs)
+    ax.plot(x, y, z, *args, color=color_rgb, **kwargs)
 
     ax.view_init(elev=elev_azim[0], azim=elev_azim[1])
     ax.set_aspect('auto', adjustable='box') 
@@ -1377,6 +1494,19 @@ def plot_linear_confidence(
 #     else:
 #         return ax, slope, intercept, r2, mse
 
+def rle(inarray):
+    """Run-length encoding returning ``(runlengths, startpositions, values)``."""
+    ia = np.asarray(inarray)
+    n = len(ia)
+    if n == 0:
+        return np.array([], dtype=int), np.array([], dtype=int), np.array([], dtype=ia.dtype)
+    y = ia[1:] != ia[:-1]
+    i = np.append(np.where(y)[0], n - 1)
+    z = np.diff(np.append(-1, i))
+    p = np.cumsum(np.append(0, z))[:-1]
+    return z, p, ia[i]
+
+
 def plot_segments(coords, mask, ax=None, **kwargs):
     """
     Given a set of coordinates, and a boolean mask, find consecutive 
@@ -1483,48 +1613,68 @@ def split_log(data, base=10):
 
 
 import matplotlib.collections as mcoll
-import matplotlib.path as mpath
 
 def colorline(
-    x, y, z=None, cmap=plt.get_cmap('viridis'), norm=plt.Normalize(0.0, 1.0),
-        linewidth=3, alpha=1.0):
+    x, y, z=None, cmap=None, norm=None,
+    linewidth=None, alpha=1.0, ax=None, **kwargs):
     """
-    Plot multiple line segments with a continuous color map
-    Attributes:
-        x (array), y (array): Lists of values of shape (N, T) or (T)
-        z (array): A list of values between 0 and 1, corresponding to the color map 
-            locations
-        norm: The normalization of the colormap
-        cmap: A matplotlib colormap object
-        **kwargs: keyword arguments passed to the LineCollection object. Accepts 
-            standard line properties typically passed to plt.plot
+    Plot multiple line segments with a continuous color map.
+
+    Args:
+        x (array), y (array): Coordinates of shape ``(N, T)`` or ``(T,)``.
+        z (array or None): Values mapped through ``cmap`` and ``norm``.
+            Defaults to evenly spaced values in ``[0, 1]``.
+        cmap (Colormap, str, or None): Matplotlib colormap or name. Defaults to
+            the active ``rcParams["image.cmap"]`` (``vernalis`` under degas styles).
+        norm (Normalize or None): Normalization for ``z``. Defaults to
+            ``plt.Normalize(z.min(), z.max())`` when ``z`` is provided, else ``[0, 1]``.
+        linewidth (float or None): Line width. Defaults to ``rcParams["lines.linewidth"]``.
+        alpha (float): Line transparency (default ``1.0``).
+        ax (matplotlib.axes.Axes or None): Axes to draw on. Defaults to ``plt.gca()``.
+        **kwargs: Additional keyword arguments forwarded to ``LineCollection``.
         
     This multisegment function is adapted from several single-segment functions:
     https://stackoverflow.com/questions/8500700/how-to-plot-a-gradient-color-line-in-matplotlib
     http://nbviewer.ipython.org/github/dpsanders/matplotlib-examples/blob/master/colorline.ipynb
     http://matplotlib.org/examples/pylab_examples/multicolored_line.html
     """
+    x = np.asarray(x)
+    y = np.asarray(y)
 
     # Default colors equally spaced on [0,1]:
     if z is None:
         z = np.linspace(0.0, 1.0, x.shape[-1])
+        if norm is None:
+            norm = plt.Normalize(0.0, 1.0)
+    else:
+        if not hasattr(z, "__iter__"):
+            z = np.array([z])
+        z = np.asarray(z)
+        if norm is None:
+            z_min, z_max = float(np.nanmin(z)), float(np.nanmax(z))
+            norm = plt.Normalize(z_min, z_max if z_max > z_min else z_min + 1.0)
 
-    # Special case if a single number:
-    if not hasattr(z, "__iter__"):  # to check for numerical input -- this is a hack
-        z = np.array([z])
-
-    z = np.asarray(z)
+    if cmap is None:
+        cmap = plt.get_cmap(plt.rcParams["image.cmap"])
+    elif isinstance(cmap, str):
+        cmap = plt.get_cmap(cmap)
+    if linewidth is None:
+        linewidth = plt.rcParams["lines.linewidth"]
 
     segments = make_segments(x, y)
     
     if len(segments.shape) == 4:
         z = np.tile(z, segments.shape[0])
         segments = np.reshape(segments, (-1, 2, 2))
-    lc = mcoll.LineCollection(segments, array=z, cmap=cmap, norm=norm,
-                              linewidth=linewidth, alpha=alpha)
+    lc = mcoll.LineCollection(
+        segments, array=z, cmap=cmap, norm=norm,
+        linewidth=linewidth, alpha=alpha, **kwargs
+    )
 
-    ax = plt.gca()
+    if ax is None:
+        ax = plt.gca()
     ax.add_collection(lc)
+    ax.autoscale_view()
 
     return lc
 

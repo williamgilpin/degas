@@ -36,6 +36,17 @@ class TestPlottingAndUtilities(unittest.TestCase):
         fig2.canvas.draw()
         self.assertNotIn(matplotlib.path.Path.CURVE4, ax2.patches[0].get_path().codes)
 
+    def test_plot_hist_rounded_and_borderless(self):
+        rng = np.random.default_rng(1)
+        vals = rng.normal(size=120)
+        fig, ax = plt.subplots()
+        out_ax = dg.plot_hist(vals, ax=ax)
+        self.assertIs(out_ax, ax)
+        self.assertGreater(len(ax.patches), 3)
+        fig.canvas.draw()
+        self.assertIn(matplotlib.path.Path.CURVE4, ax.patches[0].get_path().codes)
+        self.assertEqual(ax.get_ylim()[0], 0.0)
+
     def test_colorbar_frameless_and_aligned(self):
         fig, ax = plt.subplots()
         im = ax.imshow(np.linspace(-0.85, 0.85, 16).reshape(4, 4))
@@ -99,11 +110,19 @@ class TestPlottingAndUtilities(unittest.TestCase):
         self.assertEqual(len(ax.lines), 1)
         self.assertEqual(len(ax.collections), 1)
 
-        # Asymmetric errors with default x
+        # Asymmetric errors with default x, default cycle color, hex color, and dark theme
         fig2, ax2 = plt.subplots()
         asym_err = np.column_stack([err, 2 * err])
         dg.plot_err(y, asym_err, ax=ax2)
-        self.assertEqual(len(ax2.lines), 1)
+        dg.plot_err(y + 1.0, err, x=x, color="#4DAAE8", ax=ax2)
+        self.assertEqual(len(ax2.lines), 2)
+
+        with dg.style_context("dark"):
+            fig3, ax3 = plt.subplots()
+            dg.plot_err(y + 1.0, err, x=x + 1.0, loglog=True, ax=ax3)
+            self.assertEqual(ax3.get_xscale(), "log")
+            self.assertEqual(ax3.get_yscale(), "log")
+            self.assertAlmostEqual(ax3.collections[0].get_alpha(), 0.28)
 
     def test_plot_splity(self):
         x = np.linspace(0, 2 * np.pi, 30)
@@ -145,6 +164,19 @@ class TestPlottingAndUtilities(unittest.TestCase):
         self.assertGreater(width, height)
         self.assertTrue(np.isfinite(angle))
 
+        fig, ax = plt.subplots()
+        ell = dg.draw_ellipse(pts, ax=ax)
+        self.assertIn(ell, ax.patches)
+        self.assertFalse(ell.get_fill())
+
+    def test_plot_segments_and_rle(self):
+        coords = np.column_stack([np.linspace(0, 1, 10), np.sin(np.linspace(0, 3, 10))])
+        mask = np.array([True, True, True, False, False, True, True, False, True, True])
+        fig, ax = plt.subplots()
+        out = dg.plot_segments(coords, mask, ax=ax)
+        self.assertIs(out, ax)
+        self.assertEqual(len(ax.lines), 3)
+
     def test_plot_cross(self):
         rng = np.random.default_rng(0)
         x = rng.normal(size=50)
@@ -165,9 +197,15 @@ class TestPlottingAndUtilities(unittest.TestCase):
         y = np.sin(x)
         c = np.linspace(0, 1, 10)
         fig, ax = plt.subplots()
-        scatter = dg.scatter_lines(x, y, s=20, c=c)
+        scatter = dg.scatter_lines(x, y, s=20, c=c, ax=ax)
         self.assertIsNotNone(scatter)
         self.assertEqual(len(ax.lines), len(x) - 1)
+
+        # Also works when c is omitted
+        fig2, ax2 = plt.subplots()
+        scatter2 = dg.scatter_lines(x, y, ax=ax2)
+        self.assertIsNotNone(scatter2)
+        self.assertEqual(len(ax2.lines), len(x) - 1)
 
     def test_plot_linear_confidence_linear_and_log(self):
         x = np.linspace(1.0, 10.0, 25)
@@ -216,14 +254,18 @@ class TestPlottingAndUtilities(unittest.TestCase):
         segs = dg.make_segments(x, y)
         self.assertEqual(segs.shape, (9, 2, 2))
 
-        fig, _ = plt.subplots()
-        lc = dg.colorline(x, y)
-        self.assertIsInstance(lc, LineCollection)
+        with dg.style_context("degas_figure"):
+            fig, ax = plt.subplots()
+            lc = dg.colorline(x * 10.0, y * 10.0, ax=ax)
+            self.assertIsInstance(lc, LineCollection)
+            self.assertEqual(lc.cmap.name, "vernalis")
+            self.assertGreater(ax.get_xlim()[1], 5.0)
 
         # Multi-line input
+        fig2, ax2 = plt.subplots()
         x2 = np.vstack([x, x])
         y2 = np.vstack([y, 2 * y])
-        lc2 = dg.colorline(x2, y2)
+        lc2 = dg.colorline(x2, y2, ax=ax2)
         self.assertIsInstance(lc2, LineCollection)
 
     def test_plot3dproj_and_plt_sphere(self):

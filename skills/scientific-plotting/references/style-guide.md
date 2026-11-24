@@ -12,7 +12,7 @@ Access the directory at runtime via `degas.data_path` (or `degas.style_path`). A
 All house styles share:
 - **Font & Vector Text**: `font.family: sans-serif`, `font.sans-serif: Helvetica, Helvetica Neue, Arial, Open Sans, DejaVu Sans, sans-serif`, `mathtext.default: regular` (upright Helvetica for exponents like `$10^{-2}$`), plus editable vector text (`pdf.fonttype: 42`, `ps.fonttype: 42`, `svg.fonttype: none`).
 - **Colormap**: `image.cmap: vernalis`.
-- **Rendering, Bars & Legends**: `lines.antialiased: True`, `patch.antialiased: True`, `patch.edgecolor: none`, `patch.linewidth: 0.0`, `patch.force_edgecolor: False`, `axes.grid: False`, `legend.frameon: False`.
+- **Plot-Type Defaults**: borderless scatter (`scatter.edgecolors: none`), borderless bars/patches (`patch.edgecolor: none`, `patch.linewidth: 0.0`), automatic histogram binning (`hist.bins: auto`), capless minimalist errorbars & boxplots (`errorbar.capsize: 0`, `boxplot.showcaps: False`, borderless circle fliers), `pcolor.shading: auto`, dashed negative contours, frameless single-marker legends (`legend.frameon: False`, `scatterpoints: 1`, `numpoints: 1`).
 - **Export**: `savefig.transparent: True`, `savefig.dpi: 300`.
 
 ### Paper vs Presentation Comparison
@@ -172,19 +172,11 @@ with dg.style_context("dark"):
     plt.close(fig)
 ```
 
-### `plot_err` Argument Order & RGB Tuples
-1. Signature is `dg.plot_err(y, errs, x=[], color=(0, 0, 0), lightness=0.33/0.5, ax=None, fill_kwargs={}, **plot_kwargs)` — **`y` comes before `errs` and `x`**.
-2. `color` must be an **RGB 3-tuple in `[0, 1]`** (e.g. `dg.blue`, `dg.cornflower_blue`, or `matplotlib.colors.to_rgb("#4DAAE8")`), because `plot_err` calls `dg.lighter(color, lightness)` numerically on the tuple. Passing a hex string raises a `TypeError`.
-3. On `dark` style, `lighter()` blends toward white (which can look chalky) and the default `color=(0, 0, 0)` is invisible. Pass an explicit RGB color plus translucent `fill_kwargs`:
-   ```python
-   dg.plot_err(
-       y, err, x=x, color=dg.cornflower_blue, ax=ax,
-       fill_kwargs={"color": dg.cornflower_blue, "alpha": 0.28},
-   )
-   ```
+### `plot_err` Argument Order & Dark-Theme Behavior
+Signature is `dg.plot_err(y, errs, x=[], color=None, lightness=0.33/0.5, ax=None, fill_kwargs=None, **plot_kwargs)` — **`y` comes before `errs` and `x`**. When `color=None`, it automatically uses the next color in the active `prop_cycle` (and accepts hex strings, named colors, or RGB tuples). On `dark` style it automatically renders a translucent band (`alpha=0.28`, borderless) rather than blending toward white.
 
-### `colorline` Does Not Autoscale Axes
-`dg.colorline(x, y, z=vals, cmap=dg.vernalis, norm=plt.Normalize(vmin, vmax))` adds a `LineCollection` to `plt.gca()`. Because matplotlib does not automatically expand axis limits for added collections, always follow with `ax.autoscale()` (or explicit `set_xlim`/`set_ylim`) and optionally attach a colorbar via `fig.colorbar(lc, ax=ax)`.
+### `colorline` Defaults
+`dg.colorline(x, y, z=vals, ax=ax)` defaults `cmap` to the active `rcParams["image.cmap"]` (`vernalis`), `linewidth` to `rcParams["lines.linewidth"]`, `norm` to `[z.min(), z.max()]`, and calls `ax.autoscale_view()` automatically. Attach a colorbar via `dg.colorbar(lc, ax=ax, label=...)`.
 
 ### `plot_linear_confidence` on Log Axes & Exact Interval Bounds
 `dg.plot_linear_confidence` checks `ax.get_xscale() == "log"` and `ax.get_yscale() == "log"` when fitting in log space. Set log scales on `ax` **before** calling `plot_linear_confidence` (or pass `logx=True`/`logy=True` explicitly). All values on a log axis must be strictly positive.
