@@ -419,9 +419,9 @@ def subplots(
         if box_aspect is None:
             box_aspect = float(bh) / float(bw)
         if figsize is None:
-            # Add generous breathing room around each plot box for labels/ticks/colorbars
-            pad_w = 1.15 * ncols + 0.35
-            pad_h = 0.95 * nrows + 0.35
+            # Add compact breathing room around each plot box for labels/ticks/colorbars
+            pad_w = 0.85 * ncols + 0.25
+            pad_h = 0.75 * nrows + 0.25
             figsize = (bw * ncols + pad_w, bh * nrows + pad_h)
 
     if figsize is None:

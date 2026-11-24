@@ -97,7 +97,7 @@ def render_light_gallery(
 ) -> str:
     """Render the 2x2 light paper gallery under degas_figure."""
     with dg.style_context("degas_figure"):
-        fig, axes = dg.subplots(2, 2, box_size=(2.6, 2.6))
+        fig, axes = dg.subplots(2, 2, box_size=(2.0, 2.0))
 
         # 1. Regression + 95% CI
         ax = axes[0, 0]
@@ -265,7 +265,8 @@ def render_colorbar_comparison(
         ("dark", (22, 22, 24), "berlin", 0.00125, "Residual"),
     ):
         with dg.style_context(style_name):
-            fig, axes = dg.subplots(1, 2, box_size=(2.7, 2.7))
+            bsize = (2.0, 2.0) if style_name == "degas_figure" else (2.7, 2.7)
+            fig, axes = dg.subplots(1, 2, box_size=bsize)
             for ax, inner, title in (
                 (axes[0], False, "Outer ticks (default)"),
                 (axes[1], True, "Inner ticks (dynamic pad)"),
