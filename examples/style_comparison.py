@@ -116,7 +116,6 @@ def render_light_gallery(
             data["y_log"],
             ax=ax,
             show_pi=False,
-            extend_fraction=0.1,
             color=dg.blue,
             ci_kwargs={"color": dg.blue, "alpha": 0.22},
         )
@@ -185,7 +184,6 @@ def render_dark_gallery(
             data["y_log"],
             ax=ax,
             show_pi=False,
-            extend_fraction=0.1,
             color=dg.cornflower_blue,
             linewidth=2.5,
             ci_kwargs={"color": dg.cornflower_blue, "alpha": 0.28},

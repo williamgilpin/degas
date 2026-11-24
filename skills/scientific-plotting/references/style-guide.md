@@ -186,8 +186,10 @@ with dg.style_context("dark"):
 ### `colorline` Does Not Autoscale Axes
 `dg.colorline(x, y, z=vals, cmap=dg.vernalis, norm=plt.Normalize(vmin, vmax))` adds a `LineCollection` to `plt.gca()`. Because matplotlib does not automatically expand axis limits for added collections, always follow with `ax.autoscale()` (or explicit `set_xlim`/`set_ylim`) and optionally attach a colorbar via `fig.colorbar(lc, ax=ax)`.
 
-### `plot_linear_confidence` on Log Axes
+### `plot_linear_confidence` on Log Axes & Exact Interval Bounds
 `dg.plot_linear_confidence` checks `ax.get_xscale() == "log"` and `ax.get_yscale() == "log"` when fitting in log space. Set log scales on `ax` **before** calling `plot_linear_confidence` (or pass `logx=True`/`logy=True` explicitly). All values on a log axis must be strictly positive.
+
+By default (`fit_xlim=True`, `unclip_points=True`), `plot_linear_confidence` sets `ax.set_xlim` to the exact span of the regression/interval so bands sit flush against the left and right spines, and disables clipping (`clip_on=False`) on scatter/marker points already on `ax` so edge points defining the interval render in full. Call `ax.scatter(...)` *before* `dg.plot_linear_confidence(...)` so unclipping applies automatically.
 
 ### Protecting the Plot Box Aspect Ratio (`dg.subplots` & `dg.set_box_aspect`)
 Standard `plt.subplots(figsize=(3.5, 3.5))` sets the *outer canvas* size, so long y-labels, titles, or colorbars compress the actual plot box into a distorted rectangle. Use `dg.subplots(...)` to lock the **physical shape of the plot box itself**:

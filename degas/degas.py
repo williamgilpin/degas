@@ -1147,6 +1147,8 @@ def plot_linear_confidence(
     logx=None,
     logy=None,
     log_base=10.0,
+    fit_xlim=True,
+    unclip_points=True,
     **kwargs
 ):
     """
@@ -1168,6 +1170,11 @@ def plot_linear_confidence(
         logx (bool or None): if True/False, force log-x behavior; if None, read from ax
         logy (bool or None): if True/False, force log-y behavior; if None, read from ax
         log_base (float): base used for log transform/inverse (default 10)
+        fit_xlim (bool): if True (default), set ``ax.set_xlim`` to match the exact
+            x-span of the regression/interval so bands run flush edge-to-edge.
+        unclip_points (bool): if True (default), disable clipping (``clip_on=False``)
+            on existing scatter/marker data points on ``ax`` so boundary points that
+            define the interval edges render in full rather than being sliced off.
         kwargs: passed to ax.plot
 
     Returns:
@@ -1260,6 +1267,22 @@ def plot_linear_confidence(
         ax.fill_between(x_line, y_ci_lo, y_ci_hi, **ci_kwargs)
     if show_pi:
         ax.fill_between(x_line, y_pi_lo, y_pi_hi, **pi_kwargs)
+
+    if fit_xlim:
+        ax.set_xlim(float(x_line[0]), float(x_line[-1]))
+    if unclip_points:
+        from matplotlib.collections import PathCollection
+
+        for coll in ax.collections:
+            if isinstance(coll, PathCollection):
+                coll.set_clip_on(False)
+        for line in ax.lines:
+            if line.get_linestyle() in ("None", "none", "") and line.get_marker() not in (
+                None,
+                "",
+                "None",
+            ):
+                line.set_clip_on(False)
 
     if not return_model:
         return ax

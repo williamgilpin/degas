@@ -174,6 +174,7 @@ class TestPlottingAndUtilities(unittest.TestCase):
         y = 2.0 * x + 3.0
 
         fig, ax = plt.subplots()
+        sc = ax.scatter(x, y)
         out_ax, slope, intercept, r2, mse = dg.plot_linear_confidence(
             x, y, ax=ax, return_model=True, extend_fraction=0.1
         )
@@ -182,6 +183,21 @@ class TestPlottingAndUtilities(unittest.TestCase):
         self.assertAlmostEqual(intercept, 3.0, places=5)
         self.assertAlmostEqual(r2, 1.0, places=5)
         self.assertAlmostEqual(mse, 0.0, places=5)
+        # xlim matches exact extended interval and boundary scatter points are unclipped
+        self.assertAlmostEqual(ax.get_xlim()[0], 0.9, places=6)
+        self.assertAlmostEqual(ax.get_xlim()[1], 11.0, places=6)
+        self.assertFalse(sc.get_clip_on())
+        # CI/PI ribbons remain clipped inside the axes box
+        for coll in ax.collections:
+            if coll is not sc:
+                self.assertTrue(coll.get_clip_on())
+
+        # Default extend_fraction=0.0 matches [x.min(), x.max()] exactly
+        fig_exact, ax_exact = plt.subplots()
+        ax_exact.scatter(x, y)
+        dg.plot_linear_confidence(x, y, ax=ax_exact)
+        self.assertAlmostEqual(ax_exact.get_xlim()[0], 1.0, places=6)
+        self.assertAlmostEqual(ax_exact.get_xlim()[1], 10.0, places=6)
 
         # Log-log power law y = x^2
         fig2, ax2 = plt.subplots()
