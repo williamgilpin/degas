@@ -1,0 +1,20 @@
+# Shared base defaults for all degas house styles.
+# Applied automatically before specific styles by degas.set_style(), and can
+# also be composed directly with plt.style.use([base, <style>]).
+
+lines.antialiased: True
+patch.antialiased: True
+
+# Prefer Helvetica when installed, falling back cleanly without font warnings
+font.family: sans-serif
+font.sans-serif: Helvetica, Helvetica Neue, Arial, Open Sans, DejaVu Sans, sans-serif
+mathtext.default: regular
+
+axes.grid: False
+
+# Perceptually uniform default colormap (registered on `import degas`)
+image.cmap: vernalis
+
+# Transparent high-DPI exports by default (pair with degas.better_savefig)
+savefig.transparent: True
+savefig.dpi: 300

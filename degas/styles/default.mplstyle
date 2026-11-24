@@ -1,7 +1,14 @@
-# Matplotlib defaults, except for the degas colormap and color cycle.
-# The vernalis colormap is registered with matplotlib when degas is imported.
+# Matplotlib defaults, plus degas shared base (Helvetica, vernalis, transparent export)
+# and the degas high-contrast color cycle.
+
+font.family: sans-serif
+font.sans-serif: Helvetica, Helvetica Neue, Arial, Open Sans, DejaVu Sans, sans-serif
+mathtext.default: regular
 
 image.cmap: vernalis
+
+savefig.transparent: True
+savefig.dpi: 300
 
 # degas high contrast color scheme (degas.high_contrast)
 axes.prop_cycle: cycler("color", ["5F98FF", "FF6347", "35AD99", "9842E3", "CD1076", "EAAE1B", "B2B2B2"])

@@ -10,10 +10,10 @@ lines.antialiased: True
 # patch.edgecolor: AEAEFF
 # patch.antialiased: True
 
-font.family: Open Sans
-font.sans-serif: Open Sans
-# font.family: Arial
+font.family: sans-serif
+font.sans-serif: Helvetica, Helvetica Neue, Arial, Open Sans, DejaVu Sans, sans-serif
 font.size: 10.0
+mathtext.default: regular
 
 # axes.facecolor: 202020
 axes.edgecolor: 808080#939598
@@ -60,6 +60,8 @@ figure.figsize : 2, 2
 
 # savefig.facecolor: 587070
 # savefig.edgecolor: 101010
+savefig.transparent: True
+savefig.dpi: 300
 
 image.interpolation: nearest
 image.cmap: vernalis

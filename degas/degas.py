@@ -104,9 +104,16 @@ style_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "styles")
 def set_style(style_name="default"):
     """
     Set the style of the plot to one of the styles in the styles folder. This wraps
-    matplotlib's style.use function.
+    matplotlib's style.use function, layering ``base.mplstyle`` underneath the
+    selected style so all house styles share common defaults (Helvetica font stack,
+    ``vernalis`` colormap, transparent high-DPI exports).
     """
-    plt.style.use(os.path.join(style_path, style_name + ".mplstyle"))
+    base_file = os.path.join(style_path, "base.mplstyle")
+    target_file = os.path.join(style_path, style_name + ".mplstyle")
+    if style_name == "base" or not os.path.exists(base_file):
+        plt.style.use(target_file)
+    else:
+        plt.style.use([base_file, target_file])
 
 
 def plot_splity(x, y1, y2, ax=None, kwargs1=None, kwargs2=None):
@@ -1315,10 +1322,11 @@ def savefig_exact(arr, file_name, target_shape=None, dpi=400, **kwargs):
     """
     if target_shape is not None:
         if has_scipy:
-            arr = scipy.signal.resample(arr, target_shape[0], axis=0)
-            arr = scipy.signal.resample(arr, target_shape[1], axis=1)
+            from scipy import signal
+            arr = signal.resample(arr, target_shape[0], axis=0)
+            arr = signal.resample(arr, target_shape[1], axis=1)
         else:
-            warnings,warn("Scipy not installed; skipping resampling")
+            warnings.warn("Scipy not installed; skipping resampling")
 
     fig = plt.figure(frameon=False)
     fig.set_size_inches(arr.shape[1] / dpi, arr.shape[0] / dpi)
@@ -1426,7 +1434,6 @@ def save_colormap(cmap, filename, **kwargs):
 
 
 
-from ipywidgets import interact, IntSlider, Layout
 def sliderplot(arr, figsize=(6, 6), width='100%', **kwargs):
     """
     Given a 3-dimensional array, plot the last two dimensions and make a slider along
@@ -1438,6 +1445,8 @@ def sliderplot(arr, figsize=(6, 6), width='100%', **kwargs):
         width (str): the width of the slider
         **kwargs: keyword arguments to pass to plt.imshow
     """
+    from ipywidgets import interact, IntSlider, Layout
+
     n = arr.shape[0]
     def plotter(i):
         fig = plt.figure(figsize=figsize)

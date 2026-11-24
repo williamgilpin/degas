@@ -1,0 +1,87 @@
+# Presentation-oriented dark theme for degas (slides, talks, dark posters).
+# Designed for transparent high-DPI export onto dark slide backgrounds using
+# small figure sizes (e.g. 3-3.5 in) and degas.better_savefig(dpi=300 or 600).
+# Distinct from light paper styles (degas_figure / pastel_rainbow): outward
+# muted ticks, larger white axis titles, bolder strokes, and frameless legends.
+
+# Shared base defaults (also applied via base.mplstyle in degas.set_style)
+font.family: sans-serif
+font.sans-serif: Helvetica, Helvetica Neue, Arial, Open Sans, DejaVu Sans, sans-serif
+font.size: 12.0
+mathtext.default: regular
+
+lines.antialiased: True
+lines.linewidth: 2.5
+lines.markersize: 6.5
+lines.color: FFFFFF
+
+patch.facecolor: 4DAAE8
+patch.edgecolor: none
+patch.antialiased: True
+
+text.color: FFFFFF
+
+# Transparent surfaces so exported figures integrate onto any dark slide
+figure.figsize: 3.5, 3.5
+figure.facecolor: none
+figure.edgecolor: none
+
+axes.facecolor: none
+axes.edgecolor: D9D9D9
+axes.linewidth: 1.2
+axes.labelcolor: FFFFFF
+axes.labelsize: 15.0
+axes.labelpad: 8.0
+axes.titlesize: 15.0
+axes.titlepad: 10.0
+axes.grid: False
+# Presentation high-contrast cycle led by degas.cornflower_blue (#4DAAE8)
+axes.prop_cycle: cycler("color", ["4DAAE8", "FF7259", "3EC4AE", "B66EFF", "F24B9D", "F5C242", "CCCCCC"])
+axes.xmargin: 0.02
+axes.ymargin: 0.02
+
+grid.color: 555555
+grid.linestyle: dotted
+grid.alpha: 0.45
+
+# Outward muted-gray ticks and tick labels (contrast with inward ticks in paper figures)
+xtick.direction: out
+xtick.color: 8C8C8C
+xtick.labelcolor: 8C8C8C
+xtick.labelsize: 12.0
+xtick.major.size: 5.0
+xtick.minor.size: 2.5
+xtick.major.width: 1.0
+xtick.minor.width: 0.8
+xtick.major.pad: 5.0
+
+ytick.direction: out
+ytick.color: 8C8C8C
+ytick.labelcolor: 8C8C8C
+ytick.labelsize: 12.0
+ytick.major.size: 5.0
+ytick.minor.size: 2.5
+ytick.major.width: 1.0
+ytick.minor.width: 0.8
+ytick.major.pad: 5.0
+
+legend.frameon: False
+legend.fontsize: 11.0
+legend.facecolor: none
+legend.edgecolor: none
+
+boxplot.boxprops.color: D9D9D9
+boxplot.capprops.color: D9D9D9
+boxplot.flierprops.color: D9D9D9
+boxplot.flierprops.markeredgecolor: D9D9D9
+boxplot.whiskerprops.color: D9D9D9
+boxplot.medianprops.color: F5C242
+
+savefig.facecolor: none
+savefig.edgecolor: none
+savefig.transparent: True
+savefig.dpi: 300
+
+image.interpolation: nearest
+image.cmap: vernalis
+image.origin: lower

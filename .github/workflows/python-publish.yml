@@ -1,0 +1,106 @@
+# Build, test and publish degas to PyPI, and create the matching GitHub release, whenever
+# a version tag is pushed.
+#
+# Releasing:
+#   1. set `version = "X.Y.Z"` in pyproject.toml and commit
+#   2. git tag -a vX.Y.Z -m "release notes" && git push origin vX.Y.Z
+# The workflow checks that the tag matches the version in pyproject.toml, runs the unit
+# tests, builds the sdist and wheel, uploads them to PyPI, and then publishes a GitHub
+# release for the tag with the same files attached and the tag message as release notes.
+#
+# Authentication: if a PYPI_API_TOKEN repository secret exists it is used; otherwise the
+# upload falls back to PyPI Trusted Publishing (OIDC), which needs a one-time publisher
+# registration on pypi.org matching this repository, this workflow file name and the
+# `pypi` environment.
+
+name: Upload Python Package
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  release-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Check that the tag matches pyproject.toml
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          VERSION=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          echo "tag=$TAG pyproject=$VERSION"
+          test "$TAG" = "$VERSION" || { echo "Tag v$TAG does not match pyproject version $VERSION"; exit 1; }
+      - name: Install and test
+        env:
+          MPLBACKEND: Agg
+        run: |
+          python -m pip install --upgrade pip
+          pip install .
+          python -m unittest discover -s tests -p "test_*.py"
+      - name: Build distributions
+        run: |
+          pip install build
+          python -m build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-dists
+          path: dist/
+
+  pypi-publish:
+    runs-on: ubuntu-latest
+    needs: release-build
+    environment:
+      name: pypi
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-dists
+          path: dist/
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          skip-existing: true
+
+  github-release:
+    runs-on: ubuntu-latest
+    needs: pypi-publish
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-dists
+          path: dist/
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # report the failing command's output as an annotation, readable without signing in
+          trap 'echo "::error::$(tail -c 600 err.txt | tr "\n" " ")"' ERR
+          TAG="$GITHUB_REF_NAME"
+          # the release notes are the annotated tag's message, read from the API (with fallback for lightweight tags)
+          REF_TYPE=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq .object.type 2>> err.txt)
+          SHA=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq .object.sha 2>> err.txt)
+          if [ "$REF_TYPE" = "tag" ]; then
+            gh api "repos/$GITHUB_REPOSITORY/git/tags/$SHA" --jq .message > notes.md 2>> err.txt
+            gh release create "$TAG" dist/* \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "degas ${TAG#v}" \
+              --notes-file notes.md 2>> err.txt
+          else
+            gh release create "$TAG" dist/* \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "degas ${TAG#v}" \
+              --generate-notes 2>> err.txt
+          fi

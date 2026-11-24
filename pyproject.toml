@@ -1,23 +1,48 @@
 [build-system]
-requires = ["setuptools>=61", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["uv-build>=0.8.0,<0.12.0"]
+build-backend = "uv_build"
 
 [project]
 name = "degas"
 version = "0.1.0"
 description = "A collection of plotting utilities and helper functions for matplotlib."
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
 dependencies = [
     "numpy",
     "matplotlib",
+    "scipy",
 ]
+
+[project.optional-dependencies]
+interactive = ["ipywidgets"]
 
 [project.urls]
 Repository = "https://github.com/williamgilpin/degas"
 
-[tool.setuptools.packages.find]
-include = ["degas*"]
+[dependency-groups]
+dev = ["ruff", "ipykernel"]
 
-[tool.setuptools.package-data]
-degas = ["styles/*"]
+[tool.uv.build-backend]
+module-name = "degas"
+module-root = ""
+source-exclude = [
+    ".ipynb_checkpoints",
+    "**/.ipynb_checkpoints",
+    ".DS_Store",
+    "**/.DS_Store",
+]
+wheel-exclude = [
+    ".ipynb_checkpoints",
+    "**/.ipynb_checkpoints",
+    ".DS_Store",
+    "**/.DS_Store",
+]
+
+[tool.uv]
+package = true
+python-preference = "managed"
