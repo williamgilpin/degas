@@ -24,9 +24,17 @@ class TestPlottingAndUtilities(unittest.TestCase):
         out_ax = dg.plot_bar(heights, ax=ax)
         self.assertIs(out_ax, ax)
         self.assertEqual(len(ax.patches), len(heights))
+        fig.canvas.draw()
         for patch in ax.patches:
             self.assertAlmostEqual(patch.get_width(), dg.BAR_WIDTH, places=6)
+            self.assertIn(matplotlib.path.Path.CURVE4, patch.get_path().codes)
         self.assertEqual(ax.get_ylim()[0], 0.0)
+
+        # corner_radius=0 falls back to sharp corners
+        fig2, ax2 = plt.subplots()
+        dg.plot_bar(heights, ax=ax2, corner_radius=0)
+        fig2.canvas.draw()
+        self.assertNotIn(matplotlib.path.Path.CURVE4, ax2.patches[0].get_path().codes)
 
     def test_colorbar_frameless_and_aligned(self):
         fig, ax = plt.subplots()
@@ -34,6 +42,7 @@ class TestPlottingAndUtilities(unittest.TestCase):
         cbar = dg.colorbar(im, ax=ax, label="Value")
         self.assertFalse(cbar.outline.get_visible())
         self.assertEqual(cbar.ax.get_ylabel(), "Value")
+        self.assertEqual(cbar.ax.yaxis.label.get_rotation(), 270.0)
 
     def test_plot_err_symmetric_and_asymmetric(self):
         x = np.linspace(0, 1, 20)

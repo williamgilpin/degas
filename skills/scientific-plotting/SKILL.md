@@ -65,8 +65,8 @@ Importing `degas` registers all 41 colormaps (plus `_r` reversed variants) with 
 
 | Helper | Purpose | Key Usage Note |
 | :--- | :--- | :--- |
-| `dg.plot_bar(y, x=None, width=0.64, ax=ax)` | Bar chart with house bar proportions (`0.64` width, ~`0.36` gap) | Borderless flat fill, balanced `xmargin=0.04`, flush `y=0` baseline. If calling `ax.bar` directly, pass `width=dg.BAR_WIDTH` (`0.64`) and `ax.margins(x=0.04)`; for histograms pass `rwidth=0.64`. |
-| `dg.colorbar(mappable, ax=ax, label=...)` | Frameless colorbar matching the adjacent square axes height | No outline border (`outline.set_visible(False)`), outward ticks, exact box-height alignment via `make_axes_locatable`. Always prefer over raw `fig.colorbar(...)`. |
+| `dg.plot_bar(y, x=None, width=0.64, corner_radius=1.5, ax=ax)` | Bar chart with house proportions (`0.64` width, ~`0.36` gap, subtle `1.5pt` rounded top corners) | Borderless flat fill, aspect-preserving rounded top corners (flat on `y=0`), balanced `xmargin=0.04`. For histograms pass `rwidth=0.64`. |
+| `dg.colorbar(mappable, ax=ax, label=...)` | Frameless colorbar matching the adjacent square axes height | No outline border (`outline.set_visible(False)`), outward ticks, label foot facing inward (`rotation=270` on right), exact box-height alignment. Always prefer over raw `fig.colorbar(...)`. |
 | `dg.plot_err(y, errs, x=x, color=dg.blue)` | Line with shaded symmetric or asymmetric `(N, 2)` error band | `y` comes first; `color` must be an RGB 3-tuple in `[0, 1]` (not a hex string). |
 | `dg.plot_linear_confidence(x, y, ax=ax, return_model=True)` | Linear regression with 95% CI & PI bands (supports log axes) | Set `ax.set_xscale("log")` / `set_yscale("log")` *before* calling, or pass `logx`/`logy`. |
 | `dg.plot_splity(x, y1, y2, ax=ax, kwargs1=..., kwargs2=...)` | Dual y-axes with clean z-order layering | Pass distinct colors in `kwargs1`/`kwargs2` and match axis label colors. |

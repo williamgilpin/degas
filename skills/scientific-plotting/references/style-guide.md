@@ -29,7 +29,7 @@ All house styles share:
 | **Line width / markers** | mpl default | `linewidth: 1.5` | `linewidth: 1.5` | `linewidth: 2.5`, `markersize: 6.5` |
 | **Margins** (`x`/`y`) | `0.05` / `0.05` | `0.01` / `0.01` | `0.01` / `0.01` | `0.02` / `0.02` |
 | **Legend** | `frameon: False` | `frameon: False` | `frameon: False` | `frameon: False`, `11pt`, transparent |
-| **Colorbars** | `dg.colorbar(...)` | Frameless, outward ticks, exact box height | Frameless, outward ticks, exact box height | Frameless, outward ticks, exact box height |
+| **Colorbars** | `dg.colorbar(...)` | Frameless, outward ticks, label foot facing inward, exact box height | Frameless, outward ticks, label foot facing inward, exact box height | Frameless, outward ticks, label foot facing inward, exact box height |
 | **Image defaults** | `cmap: vernalis` | `vernalis`, `origin: lower`, `nearest` | `vernalis`, `origin: lower`, `nearest` | `vernalis`, `origin: lower`, `nearest` |
 | **Color cycle** | `high_contrast` (7) | `high_contrast` (7) | `pastel_rainbow` (12) | Dark presentation cycle led by `#4DAAE8` (7) |
 
@@ -147,7 +147,7 @@ ax.add_artist(anchored)
 
 ### Bar Charts & Histograms (Relative Width & Spacing)
 Matplotlib's default `ax.bar(..., width=0.8)` crowds bars too closely together and does not expose a `bar.width` rcParam. Across all `degas` styles (paper and presentation), prefer airy, borderless bars with a **`0.64` bar-to-pitch ratio** (~`0.36` inter-bar gap) and subtle outer horizontal padding (`xmargin=0.04`):
-- **Preferred**: call `dg.plot_bar(heights, x=labels, ax=ax)` (uses `width=dg.BAR_WIDTH` = `0.64`, `edgecolor="none"`, `linewidth=0.0`, `xmargin=0.04`, and `bottom=0` for non-negative values).
+- **Preferred**: call `dg.plot_bar(heights, x=labels, ax=ax)` (uses `width=dg.BAR_WIDTH` = `0.64`, subtle aspect-preserving `corner_radius=1.5` pt rounded top corners with flat baseline, `edgecolor="none"`, `linewidth=0.0`, `xmargin=0.04`, and `bottom=0` for non-negative values). Pass `corner_radius=0` if sharp corners are needed.
 - **Direct matplotlib**: `ax.bar(x, y, width=dg.BAR_WIDTH)` + `ax.margins(x=0.04)` (borderless fill is already set by `patch.edgecolor: none` and `patch.linewidth: 0.0` in all house styles).
 - **Histograms**: pass `rwidth=dg.BAR_WIDTH` (`0.64`) to `ax.hist(...)` for matching inter-bar spacing.
 

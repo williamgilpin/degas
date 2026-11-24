@@ -1,6 +1,8 @@
 import os, warnings
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import patches
+import matplotlib.path as mpath
 
 
 try:
@@ -104,6 +106,73 @@ style_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "styles")
 
 # Default relative bar width (bar width / center-to-center pitch), leaving ~36% inter-bar gap
 BAR_WIDTH = 0.64
+# Default subtle top-corner radius in points for degas.plot_bar rectangles
+BAR_CORNER_RADIUS = 1.5
+
+
+class _RoundedBar(patches.Rectangle):
+    """Rectangle patch with subtle aspect-preserving rounded top corners."""
+
+    def __init__(self, xy, width, height, corner_radius=BAR_CORNER_RADIUS, **kwargs):
+        super().__init__(xy, width, height, **kwargs)
+        self._corner_radius = float(corner_radius)
+        self._rounded_path = super().get_path()
+
+    def get_path(self):
+        return self._rounded_path
+
+    def _update_rounded_path(self, renderer):
+        if self._corner_radius <= 0:
+            self._rounded_path = super().get_path()
+            return
+        t = self.get_transform()
+        p0 = t.transform((0.0, 0.0))
+        p1 = t.transform((1.0, 1.0))
+        w_px = abs(p1[0] - p0[0])
+        h_px = abs(p1[1] - p0[1])
+        if w_px <= 1e-6 or h_px <= 1e-6:
+            self._rounded_path = super().get_path()
+            return
+        r_px = min(
+            self._corner_radius * renderer.points_to_pixels(1.0),
+            w_px * 0.45,
+            h_px * 0.45,
+        )
+        rx = r_px / w_px
+        ry = r_px / h_px
+        # Cubic Bezier approximation of a quarter-circle arc
+        k = 0.5522847498
+        verts = [
+            (0.0, 0.0),
+            (1.0, 0.0),
+            (1.0, 1.0 - ry),
+            (1.0, 1.0 - ry * (1.0 - k)),
+            (1.0 - rx * (1.0 - k), 1.0),
+            (1.0 - rx, 1.0),
+            (rx, 1.0),
+            (rx * (1.0 - k), 1.0),
+            (0.0, 1.0 - ry * (1.0 - k)),
+            (0.0, 1.0 - ry),
+            (0.0, 0.0),
+        ]
+        codes = [
+            mpath.Path.MOVETO,
+            mpath.Path.LINETO,
+            mpath.Path.LINETO,
+            mpath.Path.CURVE4,
+            mpath.Path.CURVE4,
+            mpath.Path.CURVE4,
+            mpath.Path.LINETO,
+            mpath.Path.CURVE4,
+            mpath.Path.CURVE4,
+            mpath.Path.CURVE4,
+            mpath.Path.CLOSEPOLY,
+        ]
+        self._rounded_path = mpath.Path(verts, codes)
+
+    def draw(self, renderer):
+        self._update_rounded_path(renderer)
+        return super().draw(renderer)
 
 
 def plot_bar(
@@ -112,11 +181,13 @@ def plot_bar(
     width=BAR_WIDTH,
     ax=None,
     xmargin=0.04,
+    corner_radius=BAR_CORNER_RADIUS,
     **kwargs,
 ):
     """
     Create a bar chart using the degas house bar proportions (relative bar width
-    ``0.64``, ~36% spacing between bars, borderless fill, and balanced outer margins).
+    ``0.64``, ~36% spacing between bars, subtle rounded top corners, borderless fill,
+    and balanced outer margins).
 
     Args:
         y (array-like): Bar heights.
@@ -126,6 +197,8 @@ def plot_bar(
         ax (matplotlib.axes.Axes or None): Axes to draw on. Defaults to ``plt.gca()``.
         xmargin (float): Horizontal padding fraction outside the outer bars
             (default ``0.04``).
+        corner_radius (float): Subtle rounding radius in points for the outer bar
+            corners (default ``1.5``). Set to ``0`` for sharp square corners.
         **kwargs: Additional keyword arguments forwarded to ``ax.bar``.
 
     Returns:
@@ -138,7 +211,23 @@ def plot_bar(
         x = np.arange(len(y_arr))
     kwargs.setdefault("edgecolor", "none")
     kwargs.setdefault("linewidth", 0.0)
-    ax.bar(x, y_arr, width=width, **kwargs)
+    container = ax.bar(x, y_arr, width=width, **kwargs)
+    if corner_radius and corner_radius > 0:
+        for rect in list(container.patches):
+            rounded = _RoundedBar(
+                rect.get_xy(),
+                rect.get_width(),
+                rect.get_height(),
+                corner_radius=corner_radius,
+                facecolor=rect.get_facecolor(),
+                edgecolor=rect.get_edgecolor(),
+                linewidth=rect.get_linewidth(),
+                alpha=rect.get_alpha(),
+                zorder=rect.get_zorder(),
+                label=rect.get_label(),
+            )
+            rect.remove()
+            ax.add_patch(rounded)
     if xmargin is not None:
         ax.margins(x=xmargin)
     if y_arr.size > 0 and np.all(np.nan_to_num(y_arr, nan=0.0) >= 0):
@@ -153,11 +242,12 @@ def colorbar(
     size="5%",
     pad=0.08,
     label=None,
+    labelpad=None,
     **kwargs,
 ):
     """
     Attach a minimal, frameless colorbar whose length matches the adjacent axes box,
-    with outward ticks.
+    with outward ticks and label baseline (foot of the text) facing inward.
 
     Args:
         mappable: Matplotlib ScalarMappable (e.g. return value of ``imshow``,
@@ -171,6 +261,8 @@ def colorbar(
         pad (float): Spacing in inches between the parent axes and colorbar
             (default ``0.08``).
         label (str or None): Optional colorbar label.
+        labelpad (float or None): Distance in points between tick labels and the
+            colorbar label.
         **kwargs: Additional keyword arguments forwarded to ``fig.colorbar``.
 
     Returns:
@@ -189,7 +281,22 @@ def colorbar(
     cbar.outline.set_visible(False)
     cbar.ax.tick_params(direction="out")
     if label is not None:
-        cbar.set_label(label)
+        if location == "right":
+            cbar.set_label(
+                label,
+                rotation=270,
+                va="bottom",
+                labelpad=6 if labelpad is None else labelpad,
+            )
+        elif location == "left":
+            cbar.set_label(
+                label,
+                rotation=90,
+                va="bottom",
+                labelpad=6 if labelpad is None else labelpad,
+            )
+        else:
+            cbar.set_label(label, labelpad=6 if labelpad is None else labelpad)
     return cbar
 
 
