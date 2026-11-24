@@ -23,8 +23,8 @@ All house styles share:
 | **Figure / Axes bg** | mpl default | mpl default | mpl default | `none` (fully transparent) |
 | **Savefig export** | `transparent: True`, `300 dpi` | `transparent: True`, `300 dpi` | `transparent: True`, `300 dpi` | `transparent: True`, `300 dpi` |
 | **Text / axis labels** | black | black (`10pt`) | black (`10pt`) | `#FFFFFF` (`15pt` labels, `labelpad=8`) |
-| **Spines** | black | `#808080` | `#939598` | `#D9D9D9` (`linewidth: 1.2`) |
-| **Ticks** | mpl default | **inward** (`7pt`/`3pt`), `#808080` | **inward** (`7pt`/`3pt`), `#939598` | **outward** (`5pt`/`2.5pt`), `#8C8C8C` ticks & `12pt` labels |
+| **Spines** | black | `#000000` (high-contrast) | `#000000` (high-contrast) | `#D9D9D9` (`linewidth: 1.2`, lower contrast) |
+| **Ticks** | mpl default | **inward** (`7pt`/`3pt`), `#000000` ticks & labels | **inward** (`7pt`/`3pt`), `#000000` ticks & labels | **outward** (`5pt`/`2.5pt`), `#8C8C8C` ticks & `12pt` labels |
 | **Default `figsize`** | `(6.4, 4.8)` | `(2, 2)` | `(2, 2)` | `(3.5, 3.5)` |
 | **Line width / markers** | mpl default | mpl default | mpl default | `linewidth: 2.5`, `markersize: 6.5` |
 | **Margins** (`x`/`y`) | `0.05` / `0.05` | `0.01` / `0.01` | `0.01` / `0.01` | `0.02` / `0.02` |

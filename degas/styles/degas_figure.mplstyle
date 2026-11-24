@@ -17,13 +17,13 @@ font.size: 10.0
 mathtext.default: regular
 
 # axes.facecolor: 202020
-axes.edgecolor: 808080#939598
+axes.edgecolor: 000000
 # axes.linewidth: 1.0
 axes.grid: False
 # axes.titlesize: x-large
 # axes.titleweight: bold
 # axes.labelsize: large
-# axes.labelcolor: FAFAFA
+axes.labelcolor: 000000
 # axes.axisbelow: True
 axes.prop_cycle: cycler("color", [[0.372549, 0.596078, 1], [1.0, .3882, .2784], [0.20784314, 0.67843137, 0.6], [0.59607843, 0.25882353, 0.89019608],[0.803922, 0.0627451, 0.462745], [0.917647, 0.682353, 0.105882],[0.7, 0.7, 0.7]])
 axes.xmargin : .01
@@ -36,13 +36,15 @@ xtick.major.size: 7.0
 xtick.minor.size: 3.0
 # xtick.major.pad: 6.0
 # xtick.minor.pad: 6.0
-xtick.color: 808080#939598 # [0.6, 0.6. 0.6]
+xtick.color: 000000
+xtick.labelcolor: 000000
 xtick.direction: in
 ytick.major.size: 7.0
 ytick.minor.size: 3.0
 # ytick.major.pad: 6.0
 # ytick.minor.pad: 6.0
-ytick.color: 808080#939598
+ytick.color: 000000
+ytick.labelcolor: 000000
 ytick.direction: in
 
 # legend.fancybox: True
@@ -51,7 +53,7 @@ ytick.direction: in
 # legend.framealpha: 0.8
 # legend.shadow: True
 
-# text.color: white
+text.color: 000000
 # text.usetex: True
 
 figure.figsize : 2, 2

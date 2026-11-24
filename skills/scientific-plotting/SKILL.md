@@ -23,8 +23,8 @@ Light and dark styles serve **different visual roles**:
 
 | Style | Intended Use | Ticks & Spines | Default `figsize` | Typography & Strokes | Color Cycle |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `degas_figure` | **Paper figures** (manuscripts, multi-panel) | Inward ticks (`7pt`/`3pt`), `#808080` spines | `(2, 2)` | `10pt` Helvetica, fine publication strokes | `high_contrast` (7 colors) |
-| `pastel_rainbow` | **Paper figures** with >6 series | Inward ticks (`7pt`/`3pt`), `#939598` spines | `(2, 2)` | `10pt` Helvetica, fine publication strokes | `pastel_rainbow` (12 colors) |
+| `degas_figure` | **Paper figures** (manuscripts, multi-panel) | High-contrast black (`#000000`) spines, ticks & labels; inward ticks (`7pt`/`3pt`) | `(2, 2)` | `10pt` Helvetica, fine publication strokes | `high_contrast` (7 colors) |
+| `pastel_rainbow` | **Paper figures** with >6 series | High-contrast black (`#000000`) spines, ticks & labels; inward ticks (`7pt`/`3pt`) | `(2, 2)` | `10pt` Helvetica, fine publication strokes | `pastel_rainbow` (12 colors) |
 | `dark` | **Presentations & talks** (transparent on dark slides) | Outward muted ticks (`#8C8C8C`), `#D9D9D9` box (`1.2pt`) | `(3.5, 3.5)` | `12pt` gray ticks, `15pt` white labels, bold `2.5pt` lines, frameless legends | Presentation cycle led by `cornflower_blue` (`#4DAAE8`) |
 | `default` | Exploratory scripts | Matplotlib defaults + shared base | `(6.4, 4.8)` | Helvetica + `vernalis` | `high_contrast` (7 colors) |
 | `base` | Minimal shared foundation for custom styling | Matplotlib defaults | `(6.4, 4.8)` | Helvetica, `vernalis`, transparent `300 dpi` | Matplotlib default |

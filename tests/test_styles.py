@@ -41,6 +41,16 @@ class TestStyles(unittest.TestCase):
                 self.assertEqual(plt.rcParams["patch.edgecolor"], "none")
                 self.assertEqual(plt.rcParams["patch.linewidth"], 0.0)
 
+        for paper_style in ("degas_figure", "pastel_rainbow"):
+            with self.subTest(paper_style=paper_style):
+                matplotlib.rcdefaults()
+                dg.set_style(paper_style)
+                self.assertEqual(plt.rcParams["axes.edgecolor"].upper(), "#000000")
+                self.assertEqual(plt.rcParams["xtick.color"].upper(), "#000000")
+                self.assertEqual(plt.rcParams["xtick.labelcolor"].upper(), "#000000")
+                self.assertEqual(plt.rcParams["ytick.color"].upper(), "#000000")
+                self.assertEqual(plt.rcParams["ytick.labelcolor"].upper(), "#000000")
+
         matplotlib.rcdefaults()
         dg.set_style("dark")
         self.assertEqual(plt.rcParams["figure.facecolor"], "none")

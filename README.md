@@ -45,7 +45,7 @@ common base (`base.mplstyle`: Helvetica font stack, `vernalis` default colormap,
 
 + `base`: shared Helvetica typography, `vernalis` colormap, and transparent high-DPI export defaults
 + `default`: matplotlib's built-in defaults plus the shared base and degas high-contrast color cycle
-+ `degas_figure`: compact paper-figure style with inward ticks, gray axes, and the degas high-contrast color cycle
++ `degas_figure`: compact paper-figure style with high-contrast black axes/ticks, inward ticks, and the degas high-contrast color cycle
 + `pastel_rainbow`: similar to `degas_figure`, with the 12-color degas pastel rainbow color cycle
 + `dark`: presentation-oriented dark style with transparent canvas, light-gray spines (`#D9D9D9`), outward muted ticks (`#8C8C8C`), larger white axis labels, bold `cornflower_blue`-led strokes, and frameless legends for talks and slides
 
