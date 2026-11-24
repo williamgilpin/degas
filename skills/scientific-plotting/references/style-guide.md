@@ -10,9 +10,9 @@ Access the directory at runtime via `degas.data_path` (or `degas.style_path`). A
 
 ### Shared Base (`base.mplstyle`)
 All house styles share:
-- **Font**: `font.family: sans-serif`, `font.sans-serif: Helvetica, Helvetica Neue, Arial, Open Sans, DejaVu Sans, sans-serif`, `mathtext.default: regular` (upright Helvetica for exponents like `$10^{-2}$`).
+- **Font & Vector Text**: `font.family: sans-serif`, `font.sans-serif: Helvetica, Helvetica Neue, Arial, Open Sans, DejaVu Sans, sans-serif`, `mathtext.default: regular` (upright Helvetica for exponents like `$10^{-2}$`), plus editable vector text (`pdf.fonttype: 42`, `ps.fonttype: 42`, `svg.fonttype: none`).
 - **Colormap**: `image.cmap: vernalis`.
-- **Rendering & Bars**: `lines.antialiased: True`, `patch.antialiased: True`, `patch.edgecolor: none`, `patch.linewidth: 0.0`, `patch.force_edgecolor: False`, `axes.grid: False`.
+- **Rendering, Bars & Legends**: `lines.antialiased: True`, `patch.antialiased: True`, `patch.edgecolor: none`, `patch.linewidth: 0.0`, `patch.force_edgecolor: False`, `axes.grid: False`, `legend.frameon: False`.
 - **Export**: `savefig.transparent: True`, `savefig.dpi: 300`.
 
 ### Paper vs Presentation Comparison
@@ -22,13 +22,14 @@ All house styles share:
 | **Role** | Exploratory | Journal manuscripts | Multi-series manuscripts (>6 curves) | Slides, talks, dark posters |
 | **Figure / Axes bg** | mpl default | mpl default | mpl default | `none` (fully transparent) |
 | **Savefig export** | `transparent: True`, `300 dpi` | `transparent: True`, `300 dpi` | `transparent: True`, `300 dpi` | `transparent: True`, `300 dpi` |
-| **Text / axis labels** | black | black (`10pt`) | black (`10pt`) | `#FFFFFF` (`15pt` labels, `labelpad=8`) |
-| **Spines** | black | `#000000` (high-contrast) | `#000000` (high-contrast) | `#D9D9D9` (`linewidth: 1.2`, lower contrast) |
-| **Ticks** | mpl default | **inward** (`7pt`/`3pt`), `#000000` ticks & labels | **inward** (`7pt`/`3pt`), `#000000` ticks & labels | **outward** (`5pt`/`2.5pt`), `#8C8C8C` ticks & `12pt` labels |
+| **Text / axis labels** | black | `#000000` (`12pt` labels, `10pt` ticks) | `#000000` (`12pt` labels, `10pt` ticks) | `#FFFFFF` (`15pt` labels, `labelpad=8`) |
+| **Spines (full box)** | black | `#000000` (`0.75pt`, full 4-sided box) | `#000000` (`0.75pt`, full 4-sided box) | `#8C8C8C` (`1.1pt`, matches tick labels) |
+| **Ticks** | mpl default | **outward** (`3.5pt`/`2pt`), `#000000` ticks & `10pt` labels | **outward** (`3.5pt`/`2pt`), `#000000` ticks & `10pt` labels | **outward** (`5pt`/`2.5pt`), `#8C8C8C` ticks & `12pt` labels |
 | **Default `figsize`** | `(6.4, 4.8)` | `(2, 2)` | `(2, 2)` | `(3.5, 3.5)` |
-| **Line width / markers** | mpl default | mpl default | mpl default | `linewidth: 2.5`, `markersize: 6.5` |
+| **Line width / markers** | mpl default | `linewidth: 1.5` | `linewidth: 1.5` | `linewidth: 2.5`, `markersize: 6.5` |
 | **Margins** (`x`/`y`) | `0.05` / `0.05` | `0.01` / `0.01` | `0.01` / `0.01` | `0.02` / `0.02` |
-| **Legend** | mpl default | mpl default | mpl default | `frameon: False`, `11pt`, transparent |
+| **Legend** | `frameon: False` | `frameon: False` | `frameon: False` | `frameon: False`, `11pt`, transparent |
+| **Colorbars** | `dg.colorbar(...)` | Frameless, outward ticks, exact box height | Frameless, outward ticks, exact box height | Frameless, outward ticks, exact box height |
 | **Image defaults** | `cmap: vernalis` | `vernalis`, `origin: lower`, `nearest` | `vernalis`, `origin: lower`, `nearest` | `vernalis`, `origin: lower`, `nearest` |
 | **Color cycle** | `high_contrast` (7) | `high_contrast` (7) | `pastel_rainbow` (12) | Dark presentation cycle led by `#4DAAE8` (7) |
 

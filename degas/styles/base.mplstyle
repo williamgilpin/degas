@@ -14,7 +14,13 @@ font.family: sans-serif
 font.sans-serif: Helvetica, Helvetica Neue, Arial, Open Sans, DejaVu Sans, sans-serif
 mathtext.default: regular
 
+# Editable text in vector exports (Illustrator / Inkscape / journal submissions)
+pdf.fonttype: 42
+ps.fonttype: 42
+svg.fonttype: none
+
 axes.grid: False
+legend.frameon: False
 
 # Perceptually uniform default colormap (registered on `import degas`)
 image.cmap: vernalis

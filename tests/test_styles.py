@@ -40,12 +40,20 @@ class TestStyles(unittest.TestCase):
                 self.assertTrue(plt.rcParams["savefig.transparent"])
                 self.assertEqual(plt.rcParams["patch.edgecolor"], "none")
                 self.assertEqual(plt.rcParams["patch.linewidth"], 0.0)
+                self.assertFalse(plt.rcParams["legend.frameon"])
+                self.assertEqual(plt.rcParams["pdf.fonttype"], 42)
+                self.assertEqual(plt.rcParams["svg.fonttype"], "none")
 
         for paper_style in ("degas_figure", "pastel_rainbow"):
             with self.subTest(paper_style=paper_style):
                 matplotlib.rcdefaults()
                 dg.set_style(paper_style)
+                self.assertTrue(plt.rcParams["axes.spines.top"])
+                self.assertTrue(plt.rcParams["axes.spines.right"])
                 self.assertEqual(plt.rcParams["axes.edgecolor"].upper(), "#000000")
+                self.assertEqual(plt.rcParams["axes.labelsize"], 12.0)
+                self.assertEqual(plt.rcParams["xtick.direction"], "out")
+                self.assertEqual(plt.rcParams["ytick.direction"], "out")
                 self.assertEqual(plt.rcParams["xtick.color"].upper(), "#000000")
                 self.assertEqual(plt.rcParams["xtick.labelcolor"].upper(), "#000000")
                 self.assertEqual(plt.rcParams["ytick.color"].upper(), "#000000")
@@ -53,9 +61,11 @@ class TestStyles(unittest.TestCase):
 
         matplotlib.rcdefaults()
         dg.set_style("dark")
+        self.assertTrue(plt.rcParams["axes.spines.top"])
+        self.assertTrue(plt.rcParams["axes.spines.right"])
         self.assertEqual(plt.rcParams["figure.facecolor"], "none")
         self.assertEqual(plt.rcParams["axes.facecolor"], "none")
-        self.assertEqual(plt.rcParams["axes.edgecolor"].upper(), "#D9D9D9")
+        self.assertEqual(plt.rcParams["axes.edgecolor"].upper(), "#8C8C8C")
         self.assertEqual(plt.rcParams["xtick.direction"], "out")
         self.assertEqual(plt.rcParams["ytick.direction"], "out")
         self.assertEqual(plt.rcParams["xtick.labelcolor"].upper(), "#8C8C8C")

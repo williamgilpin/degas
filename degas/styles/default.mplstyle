@@ -5,11 +5,17 @@ font.family: sans-serif
 font.sans-serif: Helvetica, Helvetica Neue, Arial, Open Sans, DejaVu Sans, sans-serif
 mathtext.default: regular
 
+pdf.fonttype: 42
+ps.fonttype: 42
+svg.fonttype: none
+
 image.cmap: vernalis
 
 patch.edgecolor: none
 patch.linewidth: 0.0
 patch.force_edgecolor: False
+
+legend.frameon: False
 
 savefig.transparent: True
 savefig.dpi: 300

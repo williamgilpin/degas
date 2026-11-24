@@ -1,12 +1,11 @@
-# Template here: https://github.com/matplotlib/matplotlib/blob/v3.1.3/matplotlibrc.template
+# Paper-figure style for degas (manuscripts, multi-panel publication figures).
+# High-contrast black full square box, outward ticks, larger Helvetica axis labels,
+# frameless legends, and editable transparent high-DPI exports.
 
-# lines.linewidth: 2
-# lines.color: FF00FF
+lines.linewidth: 1.5
 lines.antialiased: True
-# lines.markersize: 7.0
 
 patch.linewidth: 0.0
-# patch.facecolor: 348ABD
 patch.edgecolor: none
 patch.force_edgecolor: False
 patch.antialiased: True
@@ -16,57 +15,50 @@ font.sans-serif: Helvetica, Helvetica Neue, Arial, Open Sans, DejaVu Sans, sans-
 font.size: 10.0
 mathtext.default: regular
 
-# axes.facecolor: 202020
-axes.edgecolor: 000000
-# axes.linewidth: 1.0
-axes.grid: False
-# axes.titlesize: x-large
-# axes.titleweight: bold
-# axes.labelsize: large
-axes.labelcolor: 000000
-# axes.axisbelow: True
-axes.prop_cycle: cycler("color", [[0.372549, 0.596078, 1], [1.0, .3882, .2784], [0.20784314, 0.67843137, 0.6], [0.59607843, 0.25882353, 0.89019608],[0.803922, 0.0627451, 0.462745], [0.917647, 0.682353, 0.105882],[0.7, 0.7, 0.7]])
-axes.xmargin : .01
-axes.ymargin: .01
-
-# grid.color: FFFFFF
-# grid.linestyle: dotted
-
-xtick.major.size: 7.0
-xtick.minor.size: 3.0
-# xtick.major.pad: 6.0
-# xtick.minor.pad: 6.0
-xtick.color: 000000
-xtick.labelcolor: 000000
-xtick.direction: in
-ytick.major.size: 7.0
-ytick.minor.size: 3.0
-# ytick.major.pad: 6.0
-# ytick.minor.pad: 6.0
-ytick.color: 000000
-ytick.labelcolor: 000000
-ytick.direction: in
-
-# legend.fancybox: True
-# legend.numpoints: 1
-# legend.frameon: True
-# legend.framealpha: 0.8
-# legend.shadow: True
+pdf.fonttype: 42
+ps.fonttype: 42
+svg.fonttype: none
 
 text.color: 000000
-# text.usetex: True
 
-figure.figsize : 2, 2
-# figure.facecolor: 587070
-# figure.edgecolor: 0.5
-# figure.subplot.hspace: 0.5
+axes.edgecolor: 000000
+axes.linewidth: 0.75
+axes.spines.top: True
+axes.spines.right: True
+axes.grid: False
+axes.labelsize: 12.0
+axes.labelpad: 6.0
+axes.titlesize: 12.0
+axes.labelcolor: 000000
+axes.prop_cycle: cycler("color", [[0.372549, 0.596078, 1], [1.0, .3882, .2784], [0.20784314, 0.67843137, 0.6], [0.59607843, 0.25882353, 0.89019608],[0.803922, 0.0627451, 0.462745], [0.917647, 0.682353, 0.105882],[0.7, 0.7, 0.7]])
+axes.xmargin: 0.01
+axes.ymargin: 0.01
 
-# savefig.facecolor: 587070
-# savefig.edgecolor: 101010
+xtick.direction: out
+xtick.major.size: 3.5
+xtick.minor.size: 2.0
+xtick.major.width: 0.75
+xtick.minor.width: 0.6
+xtick.color: 000000
+xtick.labelcolor: 000000
+xtick.labelsize: 10.0
+
+ytick.direction: out
+ytick.major.size: 3.5
+ytick.minor.size: 2.0
+ytick.major.width: 0.75
+ytick.minor.width: 0.6
+ytick.color: 000000
+ytick.labelcolor: 000000
+ytick.labelsize: 10.0
+
+legend.frameon: False
+
+figure.figsize: 2, 2
+
 savefig.transparent: True
 savefig.dpi: 300
 
 image.interpolation: nearest
 image.cmap: vernalis
-image.origin : lower             ## lower | upper
-
+image.origin: lower

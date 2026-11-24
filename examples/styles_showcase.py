@@ -192,8 +192,7 @@ def render_dark_showcase(out_dir: str) -> str:
         ax_map.set_xlabel("x (mm)")
         ax_map.set_ylabel("y (mm)")
         ax_map.set_title("Diverging Field (berlin)")
-        cbar = fig.colorbar(im, ax=ax_map, shrink=0.86)
-        cbar.set_label("Residual", color="#FFFFFF")
+        dg.colorbar(im, ax=ax_map, label="Residual")
 
         out_path = os.path.join(out_dir, "dark_showcase.png")
         dg.better_savefig(out_path, dpi=300, transparent=True)

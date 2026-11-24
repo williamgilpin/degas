@@ -146,6 +146,53 @@ def plot_bar(
     return ax
 
 
+def colorbar(
+    mappable,
+    ax=None,
+    location="right",
+    size="5%",
+    pad=0.08,
+    label=None,
+    **kwargs,
+):
+    """
+    Attach a minimal, frameless colorbar whose length matches the adjacent axes box,
+    with outward ticks.
+
+    Args:
+        mappable: Matplotlib ScalarMappable (e.g. return value of ``imshow``,
+            ``scatter``, ``pcolormesh``, or ``colorline``).
+        ax (matplotlib.axes.Axes or None): Parent axes to align with. Defaults to
+            ``mappable.axes`` or ``plt.gca()``.
+        location (str): Side to place the colorbar on (``"right"``, ``"left"``,
+            ``"top"``, or ``"bottom"``).
+        size (str or float): Width (or height) of the colorbar axes passed to
+            ``make_axes_locatable.append_axes`` (default ``"5%"``).
+        pad (float): Spacing in inches between the parent axes and colorbar
+            (default ``0.08``).
+        label (str or None): Optional colorbar label.
+        **kwargs: Additional keyword arguments forwarded to ``fig.colorbar``.
+
+    Returns:
+        cbar (matplotlib.colorbar.Colorbar): The created colorbar.
+    """
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+    if ax is None:
+        ax = getattr(mappable, "axes", None) or plt.gca()
+    fig = ax.figure
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes(location, size=size, pad=pad)
+    orientation = "horizontal" if location in ("top", "bottom") else "vertical"
+    kwargs.setdefault("orientation", orientation)
+    cbar = fig.colorbar(mappable, cax=cax, **kwargs)
+    cbar.outline.set_visible(False)
+    cbar.ax.tick_params(direction="out")
+    if label is not None:
+        cbar.set_label(label)
+    return cbar
+
+
 def set_style(style_name="default"):
     """
     Set the style of the plot to one of the styles in the styles folder. This wraps
@@ -621,6 +668,7 @@ def plot_err(
     ## Set default colors and other plot properties
     all_fill_kwargs = dict(
         color=lighter(color, lightness),
+        edgecolor="none",
     )
     
     all_plot_kwargs = dict(
@@ -761,8 +809,8 @@ def plot_linear_confidence(
     x, y = np.asarray(x), np.asarray(y)
     n, m = len(x), 2
 
-    ci_kwargs0 = {"color": "gray", "alpha": 0.2}
-    pi_kwargs0 = {"color": "gray", "alpha": 0.1}
+    ci_kwargs0 = {"color": "gray", "alpha": 0.2, "edgecolor": "none"}
+    pi_kwargs0 = {"color": "gray", "alpha": 0.1, "edgecolor": "none"}
     ci_kwargs0.update(ci_kwargs)
     pi_kwargs0.update(pi_kwargs)
     ci_kwargs, pi_kwargs = ci_kwargs0, pi_kwargs0

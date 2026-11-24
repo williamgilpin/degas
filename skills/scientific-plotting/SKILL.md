@@ -23,9 +23,9 @@ Light and dark styles serve **different visual roles**:
 
 | Style | Intended Use | Ticks & Spines | Default `figsize` | Typography & Strokes | Color Cycle |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `degas_figure` | **Paper figures** (manuscripts, multi-panel) | High-contrast black (`#000000`) spines, ticks & labels; inward ticks (`7pt`/`3pt`) | `(2, 2)` | `10pt` Helvetica, fine publication strokes | `high_contrast` (7 colors) |
-| `pastel_rainbow` | **Paper figures** with >6 series | High-contrast black (`#000000`) spines, ticks & labels; inward ticks (`7pt`/`3pt`) | `(2, 2)` | `10pt` Helvetica, fine publication strokes | `pastel_rainbow` (12 colors) |
-| `dark` | **Presentations & talks** (transparent on dark slides) | Outward muted ticks (`#8C8C8C`), `#D9D9D9` box (`1.2pt`) | `(3.5, 3.5)` | `12pt` gray ticks, `15pt` white labels, bold `2.5pt` lines, frameless legends | Presentation cycle led by `cornflower_blue` (`#4DAAE8`) |
+| `degas_figure` | **Paper figures** (manuscripts, multi-panel) | Full high-contrast black (`#000000`) box (`0.75pt`) & outward ticks (`3.5pt`/`2pt`) | `(2, 2)` | `10pt` ticks, `12pt` Helvetica labels, `1.5pt` lines, frameless legends | `high_contrast` (7 colors) |
+| `pastel_rainbow` | **Paper figures** with >6 series | Full high-contrast black (`#000000`) box (`0.75pt`) & outward ticks (`3.5pt`/`2pt`) | `(2, 2)` | `10pt` ticks, `12pt` Helvetica labels, `1.5pt` lines, frameless legends | `pastel_rainbow` (12 colors) |
+| `dark` | **Presentations & talks** (transparent on dark slides) | Full lower-contrast muted box (`#8C8C8C`, `1.1pt`) matching outward `#8C8C8C` ticks | `(3.5, 3.5)` | `12pt` gray ticks, `15pt` white labels, bold `2.5pt` lines, frameless legends | Presentation cycle led by `cornflower_blue` (`#4DAAE8`) |
 | `default` | Exploratory scripts | Matplotlib defaults + shared base | `(6.4, 4.8)` | Helvetica + `vernalis` | `high_contrast` (7 colors) |
 | `base` | Minimal shared foundation for custom styling | Matplotlib defaults | `(6.4, 4.8)` | Helvetica, `vernalis`, transparent `300 dpi` | Matplotlib default |
 
@@ -66,6 +66,7 @@ Importing `degas` registers all 41 colormaps (plus `_r` reversed variants) with 
 | Helper | Purpose | Key Usage Note |
 | :--- | :--- | :--- |
 | `dg.plot_bar(y, x=None, width=0.64, ax=ax)` | Bar chart with house bar proportions (`0.64` width, ~`0.36` gap) | Borderless flat fill, balanced `xmargin=0.04`, flush `y=0` baseline. If calling `ax.bar` directly, pass `width=dg.BAR_WIDTH` (`0.64`) and `ax.margins(x=0.04)`; for histograms pass `rwidth=0.64`. |
+| `dg.colorbar(mappable, ax=ax, label=...)` | Frameless colorbar matching the adjacent square axes height | No outline border (`outline.set_visible(False)`), outward ticks, exact box-height alignment via `make_axes_locatable`. Always prefer over raw `fig.colorbar(...)`. |
 | `dg.plot_err(y, errs, x=x, color=dg.blue)` | Line with shaded symmetric or asymmetric `(N, 2)` error band | `y` comes first; `color` must be an RGB 3-tuple in `[0, 1]` (not a hex string). |
 | `dg.plot_linear_confidence(x, y, ax=ax, return_model=True)` | Linear regression with 95% CI & PI bands (supports log axes) | Set `ax.set_xscale("log")` / `set_yscale("log")` *before* calling, or pass `logx`/`logy`. |
 | `dg.plot_splity(x, y1, y2, ax=ax, kwargs1=..., kwargs2=...)` | Dual y-axes with clean z-order layering | Pass distinct colors in `kwargs1`/`kwargs2` and match axis label colors. |

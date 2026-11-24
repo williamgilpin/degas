@@ -1,22 +1,17 @@
-"""Generate persistent visual style comparisons for degas paper and presentation styles.
+"""Generate persistent visual comparisons of the degas paper and presentation styles.
 
-Renders four standardized 2x2 galleries (regression + 95% CI, time series with
-``plot_err``, bar chart with ``plot_bar``, and 2D field) so style changes can be
-inspected side by side:
+Renders two standardized 2x2 galleries (regression + 95% CI, time series with
+``plot_err``, bar chart with ``plot_bar``, and 2D field with ``dg.colorbar``):
 
-1. ``compare_light_baseline.png``      — Current ``degas_figure`` (high-contrast black axes/ticks)
-2. ``compare_light_no_regret.png``     — + High-Impact No-Regret Upgrades
-                                         (editable PDF/SVG fonts, frameless legends,
-                                         0.75pt spines / 1.5pt lines, borderless CI/error bands)
-3. ``compare_light_tufte_paper.png``   — + Paper-Figure Aesthetic Upgrades
-                                         (despined top/right on 1D plots, 3.5pt outward ticks,
-                                         preserving high-contrast black spines & ticks)
-4. ``compare_dark_presentation.png``   — Current ``dark`` presentation style
-                                         (lower-contrast gray box/ticks, white axis labels)
+1. ``compare_light_paper.png``        — ``degas_figure`` (high-contrast black box & outward
+                                        ticks, larger 12pt axis labels, frameless legend &
+                                        height-matched frameless colorbar)
+2. ``compare_dark_presentation.png``  — ``dark`` (muted ``#8C8C8C`` box matching tick labels,
+                                        white 15pt axis labels, bold cornflower_blue lead,
+                                        frameless legend & height-matched frameless colorbar)
 
-By default, transparent PNGs are also composited onto white (``#FFFFFF``) or dark
-slide (``#161618``) backgrounds when ``--composite`` is passed so differences are
-immediately legible in any image viewer.
+Pass ``--composite`` to composite transparent PNGs onto white (``#FFFFFF``) and dark
+slide (``#161618``) backdrops for immediate side-by-side viewing.
 
 Run from the repository root:
     uv run python examples/style_comparison.py
@@ -36,34 +31,9 @@ from PIL import Image
 
 import degas as dg
 
-NO_REGRET_RC = {
-    "pdf.fonttype": 42,
-    "ps.fonttype": 42,
-    "svg.fonttype": "none",
-    "legend.frameon": False,
-    "axes.linewidth": 0.75,
-    "lines.linewidth": 1.5,
-}
-
-TUFTE_PAPER_RC = {
-    **NO_REGRET_RC,
-    "axes.spines.top": False,
-    "axes.spines.right": False,
-    "xtick.direction": "out",
-    "ytick.direction": "out",
-    "xtick.major.size": 3.5,
-    "ytick.major.size": 3.5,
-    "xtick.minor.size": 2.0,
-    "ytick.minor.size": 2.0,
-    "xtick.major.width": 0.75,
-    "ytick.major.width": 0.75,
-    "xtick.minor.width": 0.6,
-    "ytick.minor.width": 0.6,
-}
-
 
 def _make_sample_data() -> dict:
-    """Deterministic datasets shared across all comparison figures."""
+    """Deterministic datasets shared across both comparison figures."""
     rng = np.random.default_rng(11)
     x_log = np.geomspace(3e-3, 25.0, 85)
     y_log = np.clip(
@@ -122,26 +92,17 @@ def _save_figure(out_path: str, bg_rgb: tuple[int, int, int] | None, dpi: int) -
 def render_light_gallery(
     data: dict,
     out_path: str,
-    suptitle: str,
-    extra_rc: dict | None = None,
-    borderless_bands: bool = False,
-    keep_heatmap_box: bool = False,
     composite: bool = False,
     dpi: int = 300,
 ) -> str:
-    """Render the 2x2 light paper gallery under degas_figure + optional rc overrides."""
+    """Render the 2x2 light paper gallery under degas_figure."""
     style_chain = [
         os.path.join(dg.data_path, "base.mplstyle"),
         os.path.join(dg.data_path, "degas_figure.mplstyle"),
     ]
-    if extra_rc:
-        style_chain.append(extra_rc)
-
-    band_edge = {"edgecolor": "none"} if borderless_bands else {}
 
     with plt.style.context(style_chain):
-        fig, axes = plt.subplots(2, 2, figsize=(7.2, 6.2), constrained_layout=True)
-        fig.suptitle(suptitle, fontsize=11.5, fontweight="bold")
+        fig, axes = plt.subplots(2, 2, figsize=(7.4, 6.4), constrained_layout=True)
 
         # 1. Regression + 95% CI
         ax = axes[0, 0]
@@ -162,7 +123,7 @@ def render_light_gallery(
             show_pi=False,
             extend_fraction=0.1,
             color=dg.blue,
-            ci_kwargs={"color": dg.blue, "alpha": 0.22, **band_edge},
+            ci_kwargs={"color": dg.blue, "alpha": 0.22},
         )
         ax.set_yticks([0, 25, 50, 75])
         ax.set_xlabel("Largest Lyapunov Exponent")
@@ -171,34 +132,12 @@ def render_light_gallery(
 
         # 2. Time series (plot_err)
         ax = axes[0, 1]
-        dg.plot_err(
-            data["y1"],
-            data["err1"],
-            x=data["t"],
-            color=dg.blue,
-            ax=ax,
-            fill_kwargs=dict(band_edge),
-            label="Channel A",
-        )
-        dg.plot_err(
-            data["y2"],
-            data["err2"],
-            x=data["t"],
-            color=dg.red,
-            ax=ax,
-            fill_kwargs=dict(band_edge),
-            label="Channel B",
-        )
+        dg.plot_err(data["y1"], data["err1"], x=data["t"], color=dg.blue, ax=ax, label="Channel A")
+        dg.plot_err(data["y2"], data["err2"], x=data["t"], color=dg.red, ax=ax, label="Channel B")
         ax.set_xlabel("Time (ms)")
         ax.set_ylabel("Signal (mV)")
         ax.set_title("Time Series (plot_err)")
-        # Show default legend styling from the active rcParams (framed vs frameless)
-        if not plt.rcParams["legend.frameon"]:
-            ax.legend(fontsize=8)
-        else:
-            leg = ax.legend(fontsize=8)
-            leg.get_frame().set_edgecolor("#CCCCCC")
-            leg.get_frame().set_linewidth(0.8)
+        ax.legend(fontsize=8.5)
 
         # 3. Bar chart (dg.plot_bar)
         ax = axes[1, 0]
@@ -211,14 +150,10 @@ def render_light_gallery(
         ax.set_ylabel("Normalized Score")
         ax.set_title("Bar Chart (width=0.64)")
 
-        # 4. 2D Field (vernalis default)
+        # 4. 2D Field (vernalis default) with frameless height-matched colorbar
         ax = axes[1, 1]
         im = ax.imshow(data["Z_seq"], extent=(-3, 3, -3, 3))
-        if keep_heatmap_box:
-            for side in ("top", "right"):
-                ax.spines[side].set_visible(True)
-        cbar = fig.colorbar(im, ax=ax, shrink=0.88)
-        cbar.set_label("Intensity")
+        dg.colorbar(im, ax=ax, label="Intensity")
         ax.set_xlabel("x (mm)")
         ax.set_ylabel("y (mm)")
         ax.set_title("2D Field (vernalis default)")
@@ -242,12 +177,7 @@ def render_dark_gallery(
     ]
 
     with plt.style.context(style_chain):
-        fig, axes = plt.subplots(2, 2, figsize=(8.2, 7.4), constrained_layout=True)
-        fig.suptitle(
-            "Dark Presentation Style (dark.mplstyle — muted gray box & ticks)",
-            fontsize=13,
-            color="#FFFFFF",
-        )
+        fig, axes = plt.subplots(2, 2, figsize=(8.4, 7.4), constrained_layout=True)
 
         # 1. Regression + 95% CI
         ax = axes[0, 0]
@@ -269,11 +199,7 @@ def render_dark_gallery(
             extend_fraction=0.1,
             color=dg.cornflower_blue,
             linewidth=2.5,
-            ci_kwargs={
-                "color": dg.cornflower_blue,
-                "alpha": 0.28,
-                "edgecolor": "none",
-            },
+            ci_kwargs={"color": dg.cornflower_blue, "alpha": 0.28},
         )
         ax.set_yticks([0, 25, 50, 75])
         ax.set_xlabel("Chaoticity")
@@ -291,7 +217,7 @@ def render_dark_gallery(
             color=c_blue,
             ax=ax,
             linewidth=2.4,
-            fill_kwargs={"color": c_blue, "alpha": 0.28, "edgecolor": "none"},
+            fill_kwargs={"color": c_blue, "alpha": 0.28},
             label="Channel A",
         )
         dg.plot_err(
@@ -301,7 +227,7 @@ def render_dark_gallery(
             color=c_coral,
             ax=ax,
             linewidth=2.4,
-            fill_kwargs={"color": c_coral, "alpha": 0.28, "edgecolor": "none"},
+            fill_kwargs={"color": c_coral, "alpha": 0.28},
             label="Channel B",
         )
         ax.set_xlabel("Time (ms)")
@@ -320,7 +246,7 @@ def render_dark_gallery(
         ax.set_ylabel("Score")
         ax.set_title("Bar Chart (width=0.64)")
 
-        # 4. Diverging field (berlin)
+        # 4. Diverging field (berlin) with frameless height-matched colorbar
         ax = axes[1, 1]
         vmax = float(np.max(np.abs(data["Z_div"])))
         im = ax.imshow(
@@ -329,8 +255,7 @@ def render_dark_gallery(
             norm=TwoSlopeNorm(vmin=-vmax, vcenter=0.0, vmax=vmax),
             extent=(-3, 3, -3, 3),
         )
-        cbar = fig.colorbar(im, ax=ax, shrink=0.88)
-        cbar.set_label("Residual", color="#FFFFFF")
+        dg.colorbar(im, ax=ax, label="Residual")
         ax.set_xlabel("x (mm)")
         ax.set_ylabel("y (mm)")
         ax.set_title("Diverging Field (berlin)")
@@ -343,7 +268,7 @@ def render_dark_gallery(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Render degas light/dark style comparison galleries."
+        description="Render degas light paper and dark presentation comparison galleries."
     )
     parser.add_argument(
         "--output-dir",
@@ -369,29 +294,7 @@ def main() -> None:
     outputs = [
         render_light_gallery(
             data,
-            os.path.join(args.output_dir, "compare_light_baseline.png"),
-            suptitle="1. Latest degas_figure (black axes & ticks, 7pt inward ticks)",
-            extra_rc=None,
-            borderless_bands=False,
-            composite=args.composite,
-            dpi=args.dpi,
-        ),
-        render_light_gallery(
-            data,
-            os.path.join(args.output_dir, "compare_light_no_regret.png"),
-            suptitle="2. + High-Impact No-Regret Upgrades (0.75pt box, 1.5pt lines, frameless legend, borderless bands)",
-            extra_rc=NO_REGRET_RC,
-            borderless_bands=True,
-            composite=args.composite,
-            dpi=args.dpi,
-        ),
-        render_light_gallery(
-            data,
-            os.path.join(args.output_dir, "compare_light_tufte_paper.png"),
-            suptitle="3. + Paper-Figure Aesthetic Upgrades (despined 1D plots, 3.5pt outward black ticks)",
-            extra_rc=TUFTE_PAPER_RC,
-            borderless_bands=True,
-            keep_heatmap_box=True,
+            os.path.join(args.output_dir, "compare_light_paper.png"),
             composite=args.composite,
             dpi=args.dpi,
         ),

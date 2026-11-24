@@ -28,6 +28,13 @@ class TestPlottingAndUtilities(unittest.TestCase):
             self.assertAlmostEqual(patch.get_width(), dg.BAR_WIDTH, places=6)
         self.assertEqual(ax.get_ylim()[0], 0.0)
 
+    def test_colorbar_frameless_and_aligned(self):
+        fig, ax = plt.subplots()
+        im = ax.imshow(np.arange(16).reshape(4, 4))
+        cbar = dg.colorbar(im, ax=ax, label="Value")
+        self.assertFalse(cbar.outline.get_visible())
+        self.assertEqual(cbar.ax.get_ylabel(), "Value")
+
     def test_plot_err_symmetric_and_asymmetric(self):
         x = np.linspace(0, 1, 20)
         y = x**2
