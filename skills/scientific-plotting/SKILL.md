@@ -141,11 +141,12 @@ plt.close(fig)
   dg.better_savefig("figure.pdf", dpi=600, transparent=True)  # vector manuscript figures
   ```
 - `dark.mplstyle` sets `figure.facecolor: none`, `axes.facecolor: none`, and `savefig.transparent: True` so figures drop directly onto any dark slide deck without a mismatched dark rectangle behind them.
+- Never override `figure.facecolor`, `axes.facecolor`, or `savefig.*` on top of `dark` (not even to darken notebook previews). The style is transparent everywhere, and the slide supplies the black background.
 - For borderless matrices or colormaps, use `dg.vanish_axes(ax)` with `dg.better_savefig(path, dpi=300, remove_border=True, transparent=True)` or `dg.save_matrix_pixels(A, path)`.
 
 ## 5. Verify Before Finishing
 
 1. Run the script cleanly (use `matplotlib.use("Agg")` in headless/batch scripts) and confirm zero errors or unexpected warnings.
-2. Inspect rendered figures—for `dark` transparent PNGs, composite onto a dark background (e.g. `#181818`) when previewing so white labels and translucent bands are clearly visible.
+2. Inspect rendered figures—for `dark` transparent PNGs, composite onto true black (`#000000`) when previewing so white labels and translucent bands are clearly visible. Composite only the inspection copy; never share it as the figure, and keep the exported file transparent.
 3. Confirm compact figure size, high DPI (`300` or `600`), transparent background (`alpha == 0` outside ink), readable Helvetica labels, and sensible axis limits (especially after `dg.colorline`).
 4. Close figures with `plt.close(fig)` when generating batches to avoid memory buildup.
